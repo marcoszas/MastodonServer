@@ -326,8 +326,8 @@ sudo mkdir /etc/nginx/ssl
 sudo openssl req -subj "/commonName=$HOSTNAME/" -x509 -nodes -days 730 -newkey rsa:2048 -keyout /etc/nginx/ssl/"$HOSTNAME".key -out /etc/nginx/ssl/"$HOSTNAME".crt
 
 # Create virtual host. PLACING ENV VARIABLES HERE COULD BE A POTENTIAL PROBLEM. REVISE IT.
-cat << 'EOF' | sudo tee /etc/nginx/sites-available/mastodon
-map $http_upgrade $connection_upgrade {
+cat << EOF | sudo tee /etc/nginx/sites-available/mastodon
+map '$http_upgrade' '$connection_upgrade' {
   default upgrade;
   ''      close;
 }
@@ -345,7 +345,7 @@ proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=CACHE:10m inactive=7d max
 server {
   listen 80;
   server_name $HOSTNAME;
-  location / { return 301 https://$host$request_uri; }
+  location / { return 301 https://'$host$request_uri'; }
 }
 
 server {
@@ -379,7 +379,7 @@ server {
   add_header Strict-Transport-Security "max-age=31536000" always;
 
   location / {
-    try_files $uri @proxy;
+    try_files '$uri' @proxy;
   }
 
   # iOS
@@ -389,26 +389,26 @@ server {
     add_header Cache-Control "public, max-age=31536000, immutable";
     add_header Strict-Transport-Security "max-age=31536000" always;
     root /opt/mastodon/;
-    try_files $uri @proxy;
+    try_files '$uri' @proxy;
   }
 
   location ~ ^/(emoji|packs) {
     add_header Cache-Control "public, max-age=31536000, immutable";
     add_header Strict-Transport-Security "max-age=31536000" always;
-    try_files $uri @proxy;
+    try_files '$uri' @proxy;
   }
 
   location /sw.js {
     add_header Cache-Control "public, max-age=0";
     add_header Strict-Transport-Security "max-age=31536000" always;
-    try_files $uri @proxy;
+    try_files '$uri' @proxy;
   }
 
   location @proxy {
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Host '$host';
+    proxy_set_header X-Real-IP '$remote_addr';
+    proxy_set_header X-Forwarded-For '$proxy_add_x_forwarded_for';
+    proxy_set_header X-Forwarded-Proto '$scheme';
     proxy_set_header Proxy "";
     proxy_pass_header Server;
 
@@ -416,32 +416,32 @@ server {
     proxy_buffering on;
     proxy_redirect off;
     proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection $connection_upgrade;
+    proxy_set_header Upgrade '$http_upgrade';
+    proxy_set_header Connection '$connection_upgrade';
 
     proxy_cache CACHE;
     proxy_cache_valid 200 7d;
     proxy_cache_valid 410 24h;
     proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
-    add_header X-Cached $upstream_cache_status;
+    add_header X-Cached '$upstream_cache_status';
     add_header Strict-Transport-Security "max-age=31536000" always;
 
     tcp_nodelay on;
   }
 
   location /api/v1/streaming {
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Host '$host';
+    proxy_set_header X-Real-IP '$remote_addr';
+    proxy_set_header X-Forwarded-For '$proxy_add_x_forwarded_for';
+    proxy_set_header X-Forwarded-Proto '$scheme';
     proxy_set_header Proxy "";
 
     proxy_pass http://streaming;
     proxy_buffering off;
     proxy_redirect off;
     proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection $connection_upgrade;
+    proxy_set_header Upgrade '$http_upgrade';
+    proxy_set_header Connection '$connection_upgrade';
 
     tcp_nodelay on;
   }
