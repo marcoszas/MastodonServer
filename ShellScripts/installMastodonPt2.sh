@@ -314,7 +314,7 @@ sudo docker run --rm -v "temporary_static:/static" tootsuite/mastodon:v4.0.2 bas
 sudo docker volume rm temporary_static
 
 # Install nginx web-server
-sudo apt install nginx
+sudo apt install nginx -y
 
 # Disable default virtual host
 sudo unlink /etc/nginx/sites-enabled/default
@@ -482,7 +482,7 @@ sudo systemctl daemon-reload
 # Start postgresql database and pgbouncer
 sudo docker-compose -f /opt/mastodon/docker-compose.yml up -d postgresql redis redis-volatile
 
-# Here we might need to create a function that checks wheter the database is started already or not
+# Here we might need to create a function that checks whether the database is started already or not
 # For that I think we could execute the ps command and do a grep to see if the healthy keyword appears three times.
 # Until that we're just going to use sleep command.
 sudo docker-compose -f /opt/mastodon/docker-compose.yml ps

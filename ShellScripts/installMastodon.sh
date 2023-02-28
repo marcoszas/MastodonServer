@@ -2,13 +2,14 @@
 
 # Update and upgrade packages
 sudo apt update
-sudo apt upgrade
+sudo apt upgrade -y
 
 # Get the name of the network interface
+# This can be prone to failing TODO: think of another way of doing it.
 network_interface=$(ip -br a | sed -n '2p' | cut -d ' ' -f 1)
 
 # Install the firewall
-sudo apt install firewalld
+sudo apt install firewalld -y
 
 
 # Add external interfaces to the public zone
@@ -52,7 +53,7 @@ echo "vm.max_map_count=262144" | sudo tee /etc/sysctl.d/90-max_map_count.conf
 # check if necessary
 sudo sysctl --system
 
-sudo apt install docker.io docker-compose
+sudo apt install docker.io docker-compose -y
 
 sudo usermod -a -G docker "$USER"
 
