@@ -1,0 +1,9 @@
+---
+- name: Main playbook
+  hosts: localhost
+  tasks:
+    - name: Install dependencies
+      include: dependencies_installation.ansible.yml
+
+    - name: Configure Servers
+      include: initial_config.ansible.yml

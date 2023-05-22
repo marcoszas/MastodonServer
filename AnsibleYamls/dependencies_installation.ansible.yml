@@ -1,0 +1,44 @@
+---
+- name: Testing Ansible
+  hosts: localhost
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_chache: yes
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Install Docker-compose
+      apt:
+        name: docker-compose
+        state: present
+
+    - name: Install Firewalld
+      apt:
+        name: firewalld
+        state: present
+
+    # We can make a conditional statement where we check if the user has already been
+    # added to the docker group so the prompt for rebooting isn't shown again.
+    - name: Add the user to the docker group
+      ansible.builtin.command: sudo usermod -aG docker $USER
+
+    - name: Alter docker configuration to log messages to journald
+      ansible.builtin.shell: 'set -o pipefail && cat <<EOF | sudo tee /etc/docker/daemon.json
+             {
+              "iptables": false,
+              "log-driver": "journald"
+
+             }
+             EOF'
+
+    # After this we should do a system reboot. Maybe we can ask the user to interact
+    # with it so we don't need to automate it and therefore it's less prone to failure.
+    - vars_prompt:
+      - name: Ask the user for a system reboot
+        prompt: "In order to apply the new configuration, you need to make a system reboot. You can do so by executing the 'sudo reboot' command."
