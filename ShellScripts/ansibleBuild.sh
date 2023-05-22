@@ -7,7 +7,7 @@ sudo apt install ansible
 
 ansible --version
 
-ansible-playbook mastodon_install.ansible.yml
+# ansible-playbook mastodon_install.ansible.yml
 
 # SO the idea with this would be to use this script to jumpstart all the process without
 # the user having to do much. So we would install Ansible automatically and then
