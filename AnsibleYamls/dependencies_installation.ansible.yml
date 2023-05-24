@@ -1,12 +1,13 @@
 ---
 - name: Testing Ansible
+# We might need to add a list of predefined hosts.
   hosts: localhost
   become: true
 
   tasks:
     - name: Update apt cache
       apt:
-        update_chache: yes
+        update_cache: true
 
     - name: Install Docker
       apt:
@@ -26,19 +27,21 @@
     # We can make a conditional statement where we check if the user has already been
     # added to the docker group so the prompt for rebooting isn't shown again.
     - name: Add the user to the docker group
-      ansible.builtin.command: sudo usermod -aG docker $USER
+      ansible.builtin.shell: sudo usermod -aG docker $USER
 
+    # We need to find a way of making the set -o pipefail work
     - name: Alter docker configuration to log messages to journald
-      ansible.builtin.shell: 'set -o pipefail && cat <<EOF | sudo tee /etc/docker/daemon.json
-             {
-              "iptables": false,
-              "log-driver": "journald"
-
-             }
-             EOF'
+      ansible.builtin.shell:
+                        cmd: |
+                          cat <<EOF | sudo tee /etc/docker/daemon.json
+                          {
+                            "iptables": false,
+                            "log-driver": "journald"
+                          }
+                          EOF
 
     # After this we should do a system reboot. Maybe we can ask the user to interact
     # with it so we don't need to automate it and therefore it's less prone to failure.
-    - vars_prompt:
-      - name: Ask the user for a system reboot
-        prompt: "In order to apply the new configuration, you need to make a system reboot. You can do so by executing the 'sudo reboot' command."
+    - name: Do system reboot to apply changes
+      debug:
+        msg: "In order to apply the new configuration, you need to make a system reboot. You can do so by executing the 'sudo reboot' command."
