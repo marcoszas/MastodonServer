@@ -21,7 +21,7 @@
     - name: Configure firewall
       firewalld:
         zone: public
-        interface: {{ external_interfaces }}
+        interface: "{{ external_interfaces }}"
         permanent: yes
         state: enabled
       # ansible.builtin.command: "sudo firewall-cmd --add-interface {{ item }} --zone public"
