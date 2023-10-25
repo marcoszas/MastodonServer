@@ -27,18 +27,23 @@
     # We can make a conditional statement where we check if the user has already been
     # added to the docker group so the prompt for rebooting isn't shown again.
     - name: Add the user to the docker group
-      ansible.builtin.shell: sudo usermod -aG docker $USER
+    # This command doesn't seem to work:
+      # ansible.builtin.shell: sudo usermod -aG docker $USER
+      user:
+        name: username
+        groups: docker
+        append: true
 
     # We need to find a way of making the set -o pipefail work
     - name: Alter docker configuration to log messages to journald
       ansible.builtin.shell:
-                        cmd: |
-                          cat <<EOF | sudo tee /etc/docker/daemon.json
-                          {
-                            "iptables": false,
-                            "log-driver": "journald"
-                          }
-                          EOF
+        cmd: |
+          cat <<EOF | sudo tee /etc/docker/daemon.json
+          {
+            "iptables": false,
+            "log-driver": "journald"
+          }
+          EOF
 
     # After this we should do a system reboot. Maybe we can ask the user to interact
     # with it so we don't need to automate it and therefore it's less prone to failure.

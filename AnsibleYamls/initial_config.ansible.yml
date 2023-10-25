@@ -19,20 +19,40 @@
         external_interfaces: "{{ ip_output.stdout_lines | select('match', '.*\\s+UP\\s+.*') | map('regex_replace', '^([^\\s]+).*$', '\\1') | list }}"
 
     - name: Configure firewall
-      ansible.builtin.command: "sudo firewall-cmd --add-interface {{ item }} --zone public"
-      loop: "{{ external_interfaces }}"
+      firewalld:
+        zone: public
+        interface: {{ external_interfaces }}
+        permanent: yes
+        state: enabled
+      # ansible.builtin.command: "sudo firewall-cmd --add-interface {{ item }} --zone public"
+      # loop: "{{ external_interfaces }}"
 
     - name: Enable http and https services
-      ansible.builtin.command: sudo firewall-cmd --add-service http --add-service https --zone public
+      firewalld:
+        zone: public
+        service: http https
+        permanent: yes
+        state: enabled
+      # ansible.builtin.command: sudo firewall-cmd --add-service http --add-service https --zone public
 
     - name: Ensure that docker interface is in a trusted zone
-      ansible.builtin.command: sudo firewall-cmd --add-interface=docker0 --zone trusted
+      firewalld:
+        zone: trusted
+        interface: docker0
+        permanent: yes
+        state: enabled
+      # ansible.builtin.command: sudo firewall-cmd --add-interface=docker0 --zone trusted
 
     - name: Add masquerade
-      ansible.builtin.command: sudo firewall-cmd --zone=public --add-masquerade
+      firewalld:
+        zone: public
+        masquerade: yes
+        permanent: yes
+        state: enabled
+      # ansible.builtin.command: sudo firewall-cmd --zone=public --add-masquerade
 
-    - name: Make changes permanent
-      ansible.builtin.command: sudo firewall-cmd --runtime-to-permanent
+    # - name: Make changes permanent
+    #   ansible.builtin.command: sudo firewall-cmd --runtime-to-permanent
 
     - name: Define server hostname
       ansible.builtin.command: "sudo hostnamectl --static set-hostname {{ server_hostname }}"
