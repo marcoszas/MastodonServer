@@ -100,15 +100,27 @@
       file:
         path: /opt/mastodon/web/public
         state: directory
-        mode: 991
+        mode: 0991
         recurse: yes
 
     - name: Create directories related to web operations (system).
       file:
         path: /opt/mastodon/web/system
         state: directory
-        mode: 991
+        mode: 0991
         recurse: yes
 
     - name: Copy docker-compose file into the corresponding system directory
       ansible.builtin.command: cp ../docker-compose.yml /opt/mastodon/docker-compose.yml
+
+    - name: Initialize empty application configuration (application.env)
+      file:
+        path: /opt/mastodon/application.env
+        state: touch
+
+    - name: Initialize empty application configuration (database.env)
+      file:
+        path: /opt/mastodon/database.env
+        state: touch
+
+    - name: 
