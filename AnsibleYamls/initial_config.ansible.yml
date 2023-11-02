@@ -15,39 +15,46 @@
       changed_when: false
 
     - name: Extract external interfaces
-      set_fact:
+      ansible.set_fact:
         external_interfaces: "{{ ip_output.stdout_lines | select('match', '.*\\s+UP\\s+.*') | map('regex_replace', '^([^\\s]+).*$', '\\1') | list }}"
 
     - name: Configure firewall
-      firewalld:
+      ansible.posix.firewalld:
         zone: public
         interface: "{{ external_interfaces }}"
-        permanent: yes
+        permanent: true
         state: enabled
       # ansible.builtin.command: "sudo firewall-cmd --add-interface {{ item }} --zone public"
       # loop: "{{ external_interfaces }}"
 
-    - name: Enable http and https services
-      firewalld:
+    - name: Enable http service
+      ansible.posix.firewalld:
         zone: public
-        service: http https
-        permanent: yes
+        service: http
+        permanent: true
         state: enabled
       # ansible.builtin.command: sudo firewall-cmd --add-service http --add-service https --zone public
 
+    - name: Enable https service
+      ansible.posix.firewalld:
+        zone: public
+        service: https
+        permanent: true
+        state: enabled
+
     - name: Ensure that docker interface is in a trusted zone
-      firewalld:
+      ansible.posix.firewalld:
         zone: trusted
         interface: docker0
-        permanent: yes
+        permanent: true
         state: enabled
       # ansible.builtin.command: sudo firewall-cmd --add-interface=docker0 --zone trusted
 
     - name: Add masquerade
-      firewalld:
+      ansible.posix.firewalld:
         zone: public
-        masquerade: yes
-        permanent: yes
+        masquerade: true
+        permanent: true
         state: enabled
       # ansible.builtin.command: sudo firewall-cmd --zone=public --add-masquerade
 
@@ -58,28 +65,49 @@
       ansible.builtin.command: "sudo hostnamectl --static set-hostname {{ server_hostname }}"
 
     - name: Increase limit of mmap counts
-      ansible.builtin.shell: set -o pipefail && echo "vm.max_map_count=262144" | sudo tee /etc/sysctl.d/90-max_map_count.conf
+      ansible.builtin.shell: echo "vm.max_map_count=262144" | sudo tee /etc/sysctl.d/90-max_map_count.conf
 
-    - name: Apply chagnes of limit in mmpa counts
+    - name: Apply changes of limit in mmpa counts
       ansible.builtin.command: sudo sysctl --system
 
     - name: Create application directory
-      ansible.builtin.command: sudo mkdir /opt/mastodon
-      changed_when: creates
+      file:
+        path: /opt/mastodon
+        state: directory
+        recurse: yes # This allows the creation of the parent directories if they don't exist
 
-    - name: Create directories related to database operations
-      ansible.builtin.command: sudo mkdir -p /opt/mastodon/database/{postgresql,redis,elasticsearch}
-      changed_when: creates
+    - name: Create directories related to database operations (PostgreSQL)
+      file:
+        path: /opt/mastodon/database/postgresql
+        state: directory
+        recurse: yes
 
-    - name: Create directories related to web operations.
-      ansible.builtin.command: sudo mkdir -p /opt/mastodon/web/{public,system}
-      changed_when: creates
+    - name: Create directories related to database operations (Redis)
+      file:
+        path: /opt/mastodon/database/redis
+        state: directory
+        recurse: yes
 
-    - name: Fix permissions on web directories.
-      ansible.builtin.command: sudo chown 991:991 /opt/mastodon/web/{public,system}
+    - name: Create directories related to database operations (elasticsearch)
+      file:
+        path: /opt/mastodon/database/elasticsearch
+        state: directory
+        mode: 1000 # This changes the permissions in the directory
+        recurse: yes
 
-    - name: Fix permissions on elasticsearch directory.
-      ansible.builtin.command: sudo chown 1000 /opt/mastodon/database/elasticsearch
+    - name: Create directories related to web operations (public).
+      file:
+        path: /opt/mastodon/web/public
+        state: directory
+        mode: 991
+        recurse: yes
+
+    - name: Create directories related to web operations (system).
+      file:
+        path: /opt/mastodon/web/system
+        state: directory
+        mode: 991
+        recurse: yes
 
     - name: Copy docker-compose file into the corresponding system directory
       ansible.builtin.command: cp ../docker-compose.yml /opt/mastodon/docker-compose.yml
