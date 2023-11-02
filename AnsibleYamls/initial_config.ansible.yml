@@ -15,7 +15,7 @@
       changed_when: false
 
     - name: Extract external interfaces
-      ansible.set_fact:
+      ansible.builtin.set_fact:
         external_interfaces: "{{ ip_output.stdout_lines | select('match', '.*\\s+UP\\s+.*') | map('regex_replace', '^([^\\s]+).*$', '\\1') | list }}"
 
     - name: Configure firewall
@@ -61,6 +61,7 @@
     # - name: Make changes permanent
     #   ansible.builtin.command: sudo firewall-cmd --runtime-to-permanent
 
+    # TODO: Make sure to check most of the commands with changed_when to avoid problems
     - name: Define server hostname
       ansible.builtin.command: "sudo hostnamectl --static set-hostname {{ server_hostname }}"
 
