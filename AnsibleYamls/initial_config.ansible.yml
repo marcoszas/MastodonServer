@@ -93,33 +93,21 @@
       ansible.builtin.file:
         path: /opt/mastodon/database/elasticsearch
         state: directory
-<<<<<<< HEAD
-        mode: 1000 # This changes the permissions in the directory
-=======
         mode: '1000' # This changes the permissions in the directory
->>>>>>> b8c45ac (fix: Modes for the files are now correctly described)
         recurse: true
 
     - name: Create directories related to web operations (public).
       ansible.builtin.file:
         path: /opt/mastodon/web/public
         state: directory
-<<<<<<< HEAD
-        mode: 991
-=======
         mode: '991'
->>>>>>> b8c45ac (fix: Modes for the files are now correctly described)
         recurse: true
 
     - name: Create directories related to web operations (system).
       ansible.builtin.file:
         path: /opt/mastodon/web/system
         state: directory
-<<<<<<< HEAD
-        mode: 991
-=======
         mode: '991'
->>>>>>> b8c45ac (fix: Modes for the files are now correctly described)
         recurse: true
 
     - name: Copy docker-compose file into the corresponding system directory
@@ -129,21 +117,13 @@
       ansible.builtin.file:
         path: /opt/mastodon/application.env
         state: touch
-<<<<<<< HEAD
-        mode: 600
-=======
         mode: '600'
->>>>>>> b8c45ac (fix: Modes for the files are now correctly described)
 
     - name: Initialize empty application configuration (database.env)
       ansible.builtin.file:
         path: /opt/mastodon/database.env
         state: touch
-<<<<<<< HEAD
-        mode: 600
-=======
         mode: '600'
->>>>>>> b8c45ac (fix: Modes for the files are now correctly described)
 
     - name: Generate SECRET_KEY_BASE secret
       ansible.builtin.command: openssl rand -hex 64
