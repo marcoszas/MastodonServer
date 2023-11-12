@@ -72,55 +72,96 @@
       ansible.builtin.command: sudo sysctl --system
 
     - name: Create application directory
-      file:
+      ansible.builtin.file:
         path: /opt/mastodon
         state: directory
-        recurse: yes # This allows the creation of the parent directories if they don't exist
+        recurse: true # This allows the creation of the parent directories if they don't exist
 
     - name: Create directories related to database operations (PostgreSQL)
-      file:
+      ansible.builtin.file:
         path: /opt/mastodon/database/postgresql
         state: directory
-        recurse: yes
+        recurse: true
 
     - name: Create directories related to database operations (Redis)
-      file:
+      ansible.builtin.file:
         path: /opt/mastodon/database/redis
         state: directory
-        recurse: yes
+        recurse: true
 
     - name: Create directories related to database operations (elasticsearch)
-      file:
+      ansible.builtin.file:
         path: /opt/mastodon/database/elasticsearch
         state: directory
-        mode: 1000 # This changes the permissions in the directory
-        recurse: yes
+        mode: "1000" # This changes the permissions in the directory
+        recurse: true
 
     - name: Create directories related to web operations (public).
-      file:
+      ansible.builtin.file:
         path: /opt/mastodon/web/public
         state: directory
-        mode: 0991
-        recurse: yes
+        mode: "0991"
+        recurse: true
 
     - name: Create directories related to web operations (system).
-      file:
+      ansible.builtin.file:
         path: /opt/mastodon/web/system
         state: directory
         mode: 0991
-        recurse: yes
+        recurse: true
 
     - name: Copy docker-compose file into the corresponding system directory
       ansible.builtin.command: cp ../docker-compose.yml /opt/mastodon/docker-compose.yml
 
     - name: Initialize empty application configuration (application.env)
-      file:
+      ansible.builtin.file:
         path: /opt/mastodon/application.env
         state: touch
+        mode: "0600"
 
     - name: Initialize empty application configuration (database.env)
-      file:
+      ansible.builtin.file:
         path: /opt/mastodon/database.env
         state: touch
+        mode: "0600"
 
-    - name: 
+    - name: Generate SECRET_KEY_BASE secret
+      ansible.builtin.command: openssl rand -hex 64
+      register: secret_key_base
+
+    - name: Generate OTP_SECRET secret
+      ansible.builtin.command: openssl rand -hex 64
+      register: otp_secret
+
+    - name: Generate VAPID_PRIVATE_KEY
+      ansible.builtin.command: openssl ecparam -name prime256v1 -genkey -noout -out vapid_private_key.pem
+      register: vapid_private_key
+
+    - name: Generate VAPID_PUBLIC_KEY
+      ansible.builtin.command: openssl ec -in vapid_private_key.pem -pubout -out vapid_public_key.pem
+      register: vapid_public_key
+
+    - name: Generate PostgreSQL secret
+      ansible.builtin.command: openssl rand -hex 64
+      register: postgresql_secret
+
+    - name: Generate elasticsearch secret
+      ansible.builtin.command: openssl rand -hex 64
+      register: elasticsearch_secret
+
+    - name: Create file to store secrets
+      ansible.builtin.file:
+        path: /opt/mastodon/secrets.txt
+        state: touch
+
+    - name: Store generated secrets in the secrets file
+      ansible.builtin.lineinfile:
+        path: /opt/mastodon/secrets.txt
+        state: present
+        with_items:
+          - "SECRET_KEY_BASE={{ secret_key_base }}"
+          - "OTP_SECRET={{ otp_secret }}"
+          - "VAPID_PRIVATE_KEY={{ vapid_private_key }}"
+          - "VAPID_PUBLIC_KEY={{ vapid_public_key }}"
+          - "POSTGRESQL_SECRET={{ postgresql_secret }}"
+          - "ELASTICSEARCH_SECRET={{ elasticsearch_secret }}"
