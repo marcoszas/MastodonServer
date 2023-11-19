@@ -93,21 +93,21 @@
       ansible.builtin.file:
         path: /opt/mastodon/database/elasticsearch
         state: directory
-        mode: '1000' # This changes the permissions in the directory
+        mode: 1000 # This changes the permissions in the directory
         recurse: true
 
     - name: Create directories related to web operations (public).
       ansible.builtin.file:
         path: /opt/mastodon/web/public
         state: directory
-        mode: '991'
+        mode: 991
         recurse: true
 
     - name: Create directories related to web operations (system).
       ansible.builtin.file:
         path: /opt/mastodon/web/system
         state: directory
-        mode: '991'
+        mode: 991
         recurse: true
 
     - name: Copy docker-compose file into the corresponding system directory
@@ -117,13 +117,13 @@
       ansible.builtin.file:
         path: /opt/mastodon/application.env
         state: touch
-        mode: '600'
+        mode: 600
 
     - name: Initialize empty application configuration (database.env)
       ansible.builtin.file:
         path: /opt/mastodon/database.env
         state: touch
-        mode: '600'
+        mode: 600
 
     - name: Generate SECRET_KEY_BASE secret
       ansible.builtin.command: openssl rand -hex 64
@@ -154,14 +154,38 @@
         path: /opt/mastodon/secrets.txt
         state: touch
 
-    - name: Store generated secrets in the secrets file
+    - name: Store generated secrets in the secrets file (SECRET_KEY_BASE)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
+        line: "SECRET_KEY_BASE={{ secret_key_base }}"
         state: present
-        with_items:
-          - "SECRET_KEY_BASE={{ secret_key_base }}"
-          - "OTP_SECRET={{ otp_secret }}"
-          - "VAPID_PRIVATE_KEY={{ vapid_private_key }}"
-          - "VAPID_PUBLIC_KEY={{ vapid_public_key }}"
-          - "POSTGRESQL_SECRET={{ postgresql_secret }}"
-          - "ELASTICSEARCH_SECRET={{ elasticsearch_secret }}"
+
+    - name: Store generated secrets in the secrets file (OTP_SECRET)
+      ansible.builtin.lineinfile:
+        path: /otp/mastodon/secrets.txt
+        line: "OTP_SECRET={{ otp_secret }}"
+        state: present
+
+    - name: Store generated secrets in the secrets file (VAPID_PRIVATE_KEY)
+      ansible.builtin.lineinfile:
+        path: /otp/mastodon/secrets.txt
+        line: "VAPID_PRIVATE_KEY={{ vapid_private_key }}"
+        state: present
+
+    - name: Store generated secrets in the secrets file (VAPID_PUBLIC_KEY)
+      ansible.builtin.lineinfile:
+        path: /otp/mastodon/secrets.txt
+        line: "VAPID_PUBLIC_KEY={{ vapid_public_key }}"
+        state: present
+
+    - name: Store generated secrets in the secrets file (POSTGRESQL_SECRET)
+      ansible.builtin.lineinfile:
+        path: /otp/mastodon/secrets.txt
+        line: "POSTGRESQL_SECRET={{ postgresql_secret }}"
+        state: present
+
+    - name: Store generated secrets in the secrets file (ELASTICSEARCH_SECRET)
+      ansible.builtin.lineinfile:
+        path: /otp/mastodon/secrets.txt
+        line: "ELASTICSEARCH_SECRET={{ elasticsearch_secret }}"
+        state: present
