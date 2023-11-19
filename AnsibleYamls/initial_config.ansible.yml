@@ -142,11 +142,11 @@
       register: vapid_public_key
 
     - name: Generate PostgreSQL secret
-      ansible.builtin.command: openssl rand -hex 64
+      ansible.builtin.command: openssl rand -hex 15
       register: postgresql_secret
 
     - name: Generate elasticsearch secret
-      ansible.builtin.command: openssl rand -hex 64
+      ansible.builtin.command: openssl rand -hex 15
       register: elasticsearch_secret
 
     - name: Create file to store secrets
