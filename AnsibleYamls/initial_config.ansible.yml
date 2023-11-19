@@ -157,35 +157,35 @@
     - name: Store generated secrets in the secrets file (SECRET_KEY_BASE)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
-        line: "SECRET_KEY_BASE={{ secret_key_base }}"
+        line: "SECRET_KEY_BASE={{ secret_key_base.stdout_lines }}"
         state: present
 
     - name: Store generated secrets in the secrets file (OTP_SECRET)
       ansible.builtin.lineinfile:
-        path: /otp/mastodon/secrets.txt
-        line: "OTP_SECRET={{ otp_secret }}"
+        path: /opt/mastodon/secrets.txt
+        line: "OTP_SECRET={{ otp_secret.stdout_lines }}"
         state: present
 
     - name: Store generated secrets in the secrets file (VAPID_PRIVATE_KEY)
       ansible.builtin.lineinfile:
-        path: /otp/mastodon/secrets.txt
-        line: "VAPID_PRIVATE_KEY={{ vapid_private_key }}"
+        path: /opt/mastodon/secrets.txt
+        line: "VAPID_PRIVATE_KEY={{ vapid_private_key.stdout_lines }}"
         state: present
 
     - name: Store generated secrets in the secrets file (VAPID_PUBLIC_KEY)
       ansible.builtin.lineinfile:
-        path: /otp/mastodon/secrets.txt
-        line: "VAPID_PUBLIC_KEY={{ vapid_public_key }}"
+        path: /opt/mastodon/secrets.txt
+        line: "VAPID_PUBLIC_KEY={{ vapid_public_key.stdout_lines }}"
         state: present
 
     - name: Store generated secrets in the secrets file (POSTGRESQL_SECRET)
       ansible.builtin.lineinfile:
-        path: /otp/mastodon/secrets.txt
-        line: "POSTGRESQL_SECRET={{ postgresql_secret }}"
+        path: /opt/mastodon/secrets.txt
+        line: "POSTGRESQL_SECRET={{ postgresql_secret.stdout_lines }}"
         state: present
 
     - name: Store generated secrets in the secrets file (ELASTICSEARCH_SECRET)
       ansible.builtin.lineinfile:
-        path: /otp/mastodon/secrets.txt
-        line: "ELASTICSEARCH_SECRET={{ elasticsearch_secret }}"
+        path: /opt/mastodon/secrets.txt
+        line: "ELASTICSEARCH_SECRET={{ elasticsearch_secret.stdout_lines }}"
         state: present
