@@ -140,11 +140,15 @@
       ansible.builtin.command: openssl ec -in vapid_private_key.pem -pubout -out vapid_public_key.pem
 
     - name: Trim generated VAPID_PRIVATE_KEY
-      ansible.builtin.command: echo -n VAPID_PRIVATE_KEY=;cat vapid_private_key.pem | sed -e "1 d" -e "$ d" | tr -d "\n"; echo
+      ansible.builtin.shell: |
+        cat vapid_private_key.pem | sed -e "1 d" -e "$ d" | tr -d "\n"
+        echo
       register: vapid_private_key
 
     - name: Trim generate VAPID_PUBLIC_KEY
-      ansible.builtin.command: echo -n VAPID_PUBLIC_KEY=;cat vapid_public_key.pem | sed -e "1 d" -e "$ d" | tr -d "\n"; echo
+      ansible.builtin.shell: |
+        cat vapid_public_key.pem | sed -e "1 d" -e "$ d" | tr -d "\n"
+        echo
       register: vapid_public_key
 
     - name: Generate PostgreSQL secret
@@ -175,13 +179,13 @@
     - name: Store generated secrets in the secrets file (VAPID_PRIVATE_KEY)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
-        line: "{{ vapid_private_key.stdout_lines }}"
+        line: "VAPID_PRIVATE_KEY={{ vapid_private_key.stdout_lines }}"
         state: present
 
     - name: Store generated secrets in the secrets file (VAPID_PUBLIC_KEY)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
-        line: "{{ vapid_public_key.stdout_lines }}"
+        line: "VAPID_PUBLIC_KEY={{ vapid_public_key.stdout_lines }}"
         state: present
 
     - name: Store generated secrets in the secrets file (POSTGRESQL_SECRET)
