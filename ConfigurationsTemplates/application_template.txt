@@ -1,0 +1,35 @@
+# environment
+RAILS_ENV=production
+NODE_ENV=production
+
+# domain
+LOCAL_DOMAIN=example.org
+
+# redirect to the first profile
+SINGLE_USER_MODE=true
+
+# do not serve static files
+RAILS_SERVE_STATIC_FILES=false
+
+# concurrency
+WEB_CONCURRENCY=2
+MAX_THREADS=5
+
+# pgbouncer
+#PREPARED_STATEMENTS=false
+
+# locale
+DEFAULT_LOCALE=en
+
+# email, not used
+SMTP_SERVER=localhost
+SMTP_PORT=587
+SMTP_FROM_ADDRESS=notifications@example.org
+
+# secrets
+SECRET_KEY_BASE=
+OTP_SECRET=
+
+VAPID_PRIVATE_KEY=
+VAPID_PUBLIC_KEY=
+EOF

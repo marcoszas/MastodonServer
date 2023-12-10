@@ -113,18 +113,6 @@
     - name: Copy docker-compose file into the corresponding system directory
       ansible.builtin.command: cp ../docker-compose.yml /opt/mastodon/docker-compose.yml
 
-    - name: Initialize empty application configuration (application.env)
-      ansible.builtin.file:
-        path: /opt/mastodon/application.env
-        state: touch
-        mode: 600
-
-    - name: Initialize empty application configuration (database.env)
-      ansible.builtin.file:
-        path: /opt/mastodon/database.env
-        state: touch
-        mode: 600
-
     - name: Generate SECRET_KEY_BASE secret
       ansible.builtin.command: openssl rand -hex 64
       register: secret_key_base
@@ -168,34 +156,68 @@
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
         line: "SECRET_KEY_BASE={{ secret_key_base.stdout_lines }}"
+        regexp: '^SECRET_KEY_BASE='
         state: present
 
     - name: Store generated secrets in the secrets file (OTP_SECRET)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
         line: "OTP_SECRET={{ otp_secret.stdout_lines }}"
+        regexp: '^OTP_SECRET='
         state: present
 
     - name: Store generated secrets in the secrets file (VAPID_PRIVATE_KEY)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
         line: "VAPID_PRIVATE_KEY={{ vapid_private_key.stdout_lines }}"
+        regexp: '^VAPID_PRIVATE_KEY='
         state: present
 
     - name: Store generated secrets in the secrets file (VAPID_PUBLIC_KEY)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
         line: "VAPID_PUBLIC_KEY={{ vapid_public_key.stdout_lines }}"
+        regexp: '^VAPID_PUBLIC_KEY='
         state: present
 
     - name: Store generated secrets in the secrets file (POSTGRESQL_SECRET)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
         line: "POSTGRESQL_SECRET={{ postgresql_secret.stdout_lines }}"
+        regexp: '^POSTGRESQL_SECRET='
         state: present
 
     - name: Store generated secrets in the secrets file (ELASTICSEARCH_SECRET)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
         line: "ELASTICSEARCH_SECRET={{ elasticsearch_secret.stdout_lines }}"
+        regexp: '^ELASTICSEARCH_SECRET='
         state: present
+
+    - name: Generate database URL
+      ansible.builtin.set_fact:
+        database_url: "postgres://mastodon:{{ postgresql_secret.stdout_lines }}@postgresql:5432/mastodon_production"
+
+    - name: Initialize empty application configuration (application.env)
+      ansible.builtin.file:
+        path: /opt/mastodon/application.env
+        state: touch
+
+    - name: Initialize empty application configuration (database.env)
+      ansible.builtin.file:
+        path: /opt/mastodon/database.env
+        state: touch
+
+    - name: Populate application.env file with basic configuration template
+      ansible.builtin.copy:
+        src: ../ConfigurationsTemplates/application_template.txt
+        dest: /opt/mastodon/application.env
+
+    - name: Populate database.env file with basic configuration template
+      ansible.builtin.copy:
+        src: ../ConfigurationsTemplates/database_template.txt
+        dest: /opt/mastodon/database.env
+
+    - name: Set generated values in the application.env configuration file
+      ansible.builtin.lineinfile:
+        path: /opt/mastodon/application.env
