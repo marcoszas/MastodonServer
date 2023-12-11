@@ -1,6 +1,6 @@
 ---
 - name: Initial ip configuration
-  hosts: localhost
+  hosts: "192.168.122.222"
   become: true
   # We need to investigate a method for making sure the user is happy with the input they've provided.
   vars_prompt:
@@ -111,7 +111,9 @@
         recurse: true
 
     - name: Copy docker-compose file into the corresponding system directory
-      ansible.builtin.command: cp ../docker-compose.yml /opt/mastodon/docker-compose.yml
+      ansible.builtin.copy:
+        src: ../docker-compose.yml
+        dest: /opt/mastodon/docker-compose.yml
 
     - name: Generate SECRET_KEY_BASE secret
       ansible.builtin.command: openssl rand -hex 64
@@ -218,6 +220,65 @@
         src: ../ConfigurationsTemplates/database_template.txt
         dest: /opt/mastodon/database.env
 
-    - name: Set generated values in the application.env configuration file
+    - name: Set generated values in the application.env configuration file (SECRET_KEY_BASE)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/application.env
+        line: "SECRET_KEY_BASE={{ secret_key_base.stdout_lines }}"
+        regexp: '^SECRET_KEY_BASE='
+        state: present
+
+    - name: Set generated values in the application.env configuration file (OTP_SECRET)
+      ansible.builtin.lineinfile:
+        path: /opt/mastodon/application.env
+        line: "OTP_SECRET={{ otp_secret.stdout_lines }}"
+        regexp: '^OTP_SECRET='
+        state: present
+
+    - name: Set generated values in the application.env configuration file (VAPID_PRIVATE_KEY)
+      ansible.builtin.lineinfile:
+        path: /opt/mastodon/application.env
+        line: "VAPID_PRIVATE_KEY={{ vapid_private_key.stdout_lines }}"
+        regexp: '^VAPID_PRIVATE_KEY='
+        state: present
+
+    - name: Set generated values in the application.env configuration file (VAPID_PUBLIC_KEY)
+      ansible.builtin.lineinfile:
+        path: /opt/mastodon/application.env
+        line: "VAPID_PUBLIC_KEY={{ vapid_public_key.stdout_lines }}"
+        regexp: '^VAPID_PUBLIC_KEY='
+        state: present
+
+    - name: Set generated values in the application.env configuration file (POSTGRESQL_SECRET)
+      ansible.builtin.lineinfile:
+        path: /opt/mastodon/database.env
+        line: "POSTGRESQL_PASSWORD={{ postgresql_secret.stdout_lines }}"
+        regexp: '^POSTGRES_PASSWORD='
+        state: present
+
+    - name: Set generated values in the application.env configuration file (Mastodon Database Password)
+      ansible.builtin.lineinfile:
+        path: /opt/mastodon/database.env
+        line: "DB_PASS={{ postgresql_secret.stdout_lines }}"
+        regexp: '^DB_PASS='
+        state: present
+
+    - name: Set generated values in the application.env configuration file (ELASTICSEARCH_SECRET)
+      ansible.builtin.lineinfile:
+        path: /opt/mastodon/database.env
+        line: "ELASTICSEARCH_PASSWORD={{ elasticsearch_secret.stdout_lines }}"
+        regexp: '^ELASTICSEARCH_PASSWORD='
+        state: present
+
+    - name: Set generated values in the application.env configuration file (Mastodon Elasticsearch Password)
+      ansible.builtin.lineinfile:
+        path: /opt/mastodon/database.env
+        line: "ELASTICSEARCH_PASSWORD={{ elasticsearch_secret.stdout_lines }}"
+        regexp: '^ES_PASS='
+        state: present
+
+    - name: Set generated values in the application.env configuration file (Database url)
+      ansible.builtin.lineinfile:
+        path: /opt/mastodon/database.env
+        line: "#DATABASE_URL={{ database_url }}"
+        regexp: '^#DATABASE_URL='
+        state: present
