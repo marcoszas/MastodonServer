@@ -157,48 +157,48 @@
     - name: Store generated secrets in the secrets file (SECRET_KEY_BASE)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
-        line: "SECRET_KEY_BASE={{ secret_key_base.stdout_lines }}"
+        line: "SECRET_KEY_BASE={{ secret_key_base.stdout_lines[0] }}"
         regexp: '^SECRET_KEY_BASE='
         state: present
 
     - name: Store generated secrets in the secrets file (OTP_SECRET)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
-        line: "OTP_SECRET={{ otp_secret.stdout_lines }}"
+        line: "OTP_SECRET={{ otp_secret.stdout_lines[0] }}"
         regexp: '^OTP_SECRET='
         state: present
 
     - name: Store generated secrets in the secrets file (VAPID_PRIVATE_KEY)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
-        line: "VAPID_PRIVATE_KEY={{ vapid_private_key.stdout_lines }}"
+        line: "VAPID_PRIVATE_KEY={{ vapid_private_key.stdout_lines[0] }}"
         regexp: '^VAPID_PRIVATE_KEY='
         state: present
 
     - name: Store generated secrets in the secrets file (VAPID_PUBLIC_KEY)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
-        line: "VAPID_PUBLIC_KEY={{ vapid_public_key.stdout_lines }}"
+        line: "VAPID_PUBLIC_KEY={{ vapid_public_key.stdout_lines[0] }}"
         regexp: '^VAPID_PUBLIC_KEY='
         state: present
 
     - name: Store generated secrets in the secrets file (POSTGRESQL_SECRET)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
-        line: "POSTGRESQL_SECRET={{ postgresql_secret.stdout_lines }}"
+        line: "POSTGRESQL_SECRET={{ postgresql_secret.stdout_lines[0] }}"
         regexp: '^POSTGRESQL_SECRET='
         state: present
 
     - name: Store generated secrets in the secrets file (ELASTICSEARCH_SECRET)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/secrets.txt
-        line: "ELASTICSEARCH_SECRET={{ elasticsearch_secret.stdout_lines }}"
+        line: "ELASTICSEARCH_SECRET={{ elasticsearch_secret.stdout_lines[0] }}"
         regexp: '^ELASTICSEARCH_SECRET='
         state: present
 
     - name: Generate database URL
       ansible.builtin.set_fact:
-        database_url: "postgres://mastodon:{{ postgresql_secret.stdout_lines }}@postgresql:5432/mastodon_production"
+        database_url: "postgres://mastodon:{{ postgresql_secret.stdout_lines[0] }}@postgresql:5432/mastodon_production"
 
     - name: Initialize empty application configuration (application.env)
       ansible.builtin.file:
@@ -223,56 +223,56 @@
     - name: Set generated values in the application.env configuration file (SECRET_KEY_BASE)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/application.env
-        line: "SECRET_KEY_BASE={{ secret_key_base.stdout_lines }}"
+        line: "SECRET_KEY_BASE={{ secret_key_base.stdout_lines[0] }}"
         regexp: '^SECRET_KEY_BASE='
         state: present
 
     - name: Set generated values in the application.env configuration file (OTP_SECRET)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/application.env
-        line: "OTP_SECRET={{ otp_secret.stdout_lines }}"
+        line: "OTP_SECRET={{ otp_secret.stdout_lines[0] }}"
         regexp: '^OTP_SECRET='
         state: present
 
     - name: Set generated values in the application.env configuration file (VAPID_PRIVATE_KEY)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/application.env
-        line: "VAPID_PRIVATE_KEY={{ vapid_private_key.stdout_lines }}"
+        line: "VAPID_PRIVATE_KEY={{ vapid_private_key.stdout_lines[0] }}"
         regexp: '^VAPID_PRIVATE_KEY='
         state: present
 
     - name: Set generated values in the application.env configuration file (VAPID_PUBLIC_KEY)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/application.env
-        line: "VAPID_PUBLIC_KEY={{ vapid_public_key.stdout_lines }}"
+        line: "VAPID_PUBLIC_KEY={{ vapid_public_key.stdout_lines[0] }}"
         regexp: '^VAPID_PUBLIC_KEY='
         state: present
 
     - name: Set generated values in the application.env configuration file (POSTGRESQL_SECRET)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/database.env
-        line: "POSTGRESQL_PASSWORD={{ postgresql_secret.stdout_lines }}"
+        line: "POSTGRESQL_PASSWORD={{ postgresql_secret.stdout_lines[0] }}"
         regexp: '^POSTGRES_PASSWORD='
         state: present
 
     - name: Set generated values in the application.env configuration file (Mastodon Database Password)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/database.env
-        line: "DB_PASS={{ postgresql_secret.stdout_lines }}"
+        line: "DB_PASS={{ postgresql_secret.stdout_lines[0] }}"
         regexp: '^DB_PASS='
         state: present
 
     - name: Set generated values in the application.env configuration file (ELASTICSEARCH_SECRET)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/database.env
-        line: "ELASTICSEARCH_PASSWORD={{ elasticsearch_secret.stdout_lines }}"
+        line: "ELASTICSEARCH_PASSWORD={{ elasticsearch_secret.stdout_lines[0] }}"
         regexp: '^ELASTICSEARCH_PASSWORD='
         state: present
 
     - name: Set generated values in the application.env configuration file (Mastodon Elasticsearch Password)
       ansible.builtin.lineinfile:
         path: /opt/mastodon/database.env
-        line: "ELASTICSEARCH_PASSWORD={{ elasticsearch_secret.stdout_lines }}"
+        line: "ELASTICSEARCH_PASSWORD={{ elasticsearch_secret.stdout_lines[0] }}"
         regexp: '^ES_PASS='
         state: present
 
