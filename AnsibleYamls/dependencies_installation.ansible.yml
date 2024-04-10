@@ -1,7 +1,7 @@
 ---
 - name: Testing Ansible
 # We might need to add a list of predefined hosts.
-  hosts: localhost
+  hosts: "192.168.64.3"
   become: true
 
   tasks:
@@ -20,7 +20,7 @@
         state: present
 
     - name: Install Firewalld
-      apt:
+      ansible.builtin.package:
         name: firewalld
         state: present
 

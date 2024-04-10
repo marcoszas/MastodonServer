@@ -1,0 +1,19 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install Docker
+  ansible.builtin.apt:
+    name: docker.io
+    state: present
+
+- name: Install Docker-compose
+  ansible.builtin.apt:
+    name: docker-compose
+    state: present
+
+- name: Install Firewalld
+  ansible.builtin.apt:
+    name: firewalld
+    state: present

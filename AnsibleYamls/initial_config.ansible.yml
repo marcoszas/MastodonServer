@@ -1,14 +1,26 @@
 ---
 - name: Initial ip configuration
-  hosts: "192.168.122.222"
+  hosts: "192.168.64.3"
   become: true
   # We need to investigate a method for making sure the user is happy with the input they've provided.
   vars_prompt:
     - name: server_hostname
-      prompt: "Enter the server hostname: "
+      prompt: "Enter the server hostname"
       private: false
 
   tasks:
+    # To implement in the future
+    # - name: Install Docker
+    #   apt:
+    #     name: docker.io
+    #     state: present
+
+    # - name: Start docker daemon
+    #   service:
+    #     name: docker
+    #     state: started
+    #     enabled: yes
+
     - name: List external interfaces
       ansible.builtin.command: ip -br a
       register: ip_output
@@ -282,3 +294,44 @@
         line: "#DATABASE_URL={{ database_url }}"
         regexp: '^#DATABASE_URL='
         state: present
+
+    - name: Create temporary volume
+      become: true
+      ansible.builtin.command:
+        cmd: 'sudo docker volume create --opt type=none --opt device=/opt/mastodon/web/public --opt o=bind temporary_static'
+      # community.docker.docker_volume:
+      #   name: temporary_static
+      #   state: present
+      #   driver_options:
+      #     type: none
+      #     device: /opt/mastodon/web/public
+      #     o: bind
+
+    - name: Create container to copy static files
+      become: true
+      ansible.builtin.command:
+        cmd: 'sudo docker run --rm -v "temporary_static:/static" tootsuite/mastodon:v4.0.2 bash -c "cp -r /opt/mastodon/public/* /static/"'
+      # community.docker.docker_container:
+      #   name: temporary_container
+      #   image: tootsuite/mastodon:v4.0.2
+      #   volumes:
+      #     - /temporary_static:/static
+      #   state: started
+      #   # container_default_behavior: compatibility
+      #   # command: cp -r /opt/mastodon/web/public/* /static/
+      #   detach: true
+      #   # auto_remove: true
+
+    # - name: Copy static files
+    #   become: true
+    #   community.docker.docker_container_exec:
+    #     container: temporary_container
+    #     command: "/bin/bash cp -r /opt/mastodon/web/public/* /static/"
+
+    # - name: Remove temporary volume
+    #   become: true
+    #   ansible.builtin.command:
+    #     cmd: 'sudo docker volume rm temporary_static'
+      # community.docker.docker_volume:
+      #   name: temporary_static
+      #   state: absent
