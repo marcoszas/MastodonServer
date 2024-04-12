@@ -5,20 +5,20 @@
 
 - name: Install Docker
   ansible.builtin.apt:
-    name: docker.io=24.0.5
+    name: docker.io
     state: present
 
 - name: Install Docker-compose
   ansible.builtin.apt:
-    name: docker-compose=1.29.2
+    name: docker-compose
     state: present
 
 - name: Install Firewalld
   ansible.builtin.apt:
-    name: firewalld=1.1.1
+    name: firewalld
     state: present
 
 - name: Install Nginx
   ansible.builtin.apt:
-    name: nginx=1.18.0
+    name: nginx
     state: present

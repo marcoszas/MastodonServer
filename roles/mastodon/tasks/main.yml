@@ -315,3 +315,27 @@
   # community.docker.docker_volume:
   #   name: temporary_static
   #   state: absent
+
+- name: Disable default virtual host
+  become: true
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Create a directory for SSL certificates
+  become: true
+  ansible.builtin.file:
+    path: /etc/nginx/ssl
+    state: directory
+    recurse: true
+
+- name: Create certificate and private key for Nginx # Still need to define certain configuration values for this meanwhile we'll use simple command.
+  become: true
+  ansible.builtin.command:
+    cmd: 'sudo openssl req -subj "/commonName=example.org/" -x509 -nodes -days 730 -newkey rsa:2048 -keyout /etc/nginx/ssl/example.org.key -out /etc/nginx/ssl/example.org.crt'
+
+- name: Create virtual host
+  become: true
+  ansible.builtin.template:
+    src: ../templates/mastodon_nginx_config.j2
+    dest: /etc/nginx/sites-available/mastodon
