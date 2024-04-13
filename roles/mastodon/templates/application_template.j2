@@ -3,7 +3,7 @@ RAILS_ENV=production
 NODE_ENV=production
 
 # domain
-LOCAL_DOMAIN=example.org
+LOCAL_DOMAIN={{ mastodon_server_hostname }}
 
 # redirect to the first profile
 SINGLE_USER_MODE=true
@@ -27,9 +27,9 @@ SMTP_PORT=587
 SMTP_FROM_ADDRESS=notifications@example.org
 
 # secrets
-SECRET_KEY_BASE=
-OTP_SECRET=
+SECRET_KEY_BASE={{ secret_key_base.stdout_lines[0] }}
+OTP_SECRET={{ otp_secret.stdout_lines[0] }}
 
-VAPID_PRIVATE_KEY=
-VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY={{ vapid_private_key.stdout_lines[0] }}
+VAPID_PUBLIC_KEY={{ vapid_public_key.stdout_lines[0] }}
 EOF

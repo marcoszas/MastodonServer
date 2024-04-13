@@ -1,23 +1,23 @@
 # postgresql configuration
 POSTGRES_USER=mastodon
 POSTGRES_DB=mastodon_production
-POSTGRES_PASSWORD=
+POSTGRES_PASSWORD={{ postgresql_secret.stdout_lines[0] }}
 
 # pgbouncer configuration
 #POOL_MODE=transaction
 #ADMIN_USERS=postgres,mastodon
-#DATABASE_URL=
+#DATABASE_URL={{ database_url }}
 
 # elasticsearch
 ES_JAVA_OPTS=-Xms512m -Xmx512m
-ELASTIC_PASSWORD=
+ELASTIC_PASSWORD={{ elasticsearch_secret.stdout_lines[0] }}
 
 # mastodon database configuration
 #DB_HOST=pgbouncer
 DB_HOST=postgresql
 DB_USER=mastodon
 DB_NAME=mastodon_production
-DB_PASS=
+DB_PASS={{ postgresql_secret.stdout_lines[0] }}
 DB_PORT=5432
 
 REDIS_HOST=redis
@@ -30,5 +30,5 @@ ES_ENABLED=true
 ES_HOST=elasticsearch
 ES_PORT=9200
 ES_USER=elastic
-ES_PASS=
+ES_PASS={{ elasticsearch_secret.stdout_lines[0] }}
 EOF

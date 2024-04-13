@@ -16,8 +16,6 @@
     interface: "{{ external_interfaces }}"
     permanent: true
     state: enabled
-  # ansible.builtin.command: "sudo firewall-cmd --add-interface {{ item }} --zone public"
-  # loop: "{{ external_interfaces }}"
 
 - name: Enable http service
   ansible.posix.firewalld:
@@ -25,7 +23,6 @@
     service: http
     permanent: true
     state: enabled
-  # ansible.builtin.command: sudo firewall-cmd --add-service http --add-service https --zone public
 
 - name: Enable https service
   ansible.posix.firewalld:
@@ -40,7 +37,6 @@
     interface: docker0
     permanent: true
     state: enabled
-  # ansible.builtin.command: sudo firewall-cmd --add-interface=docker0 --zone trusted
 
 - name: Add masquerade
   ansible.posix.firewalld:
@@ -48,10 +44,6 @@
     masquerade: true
     permanent: true
     state: enabled
-  # ansible.builtin.command: sudo firewall-cmd --zone=public --add-masquerade
-
-# - name: Make changes permanent
-#   ansible.builtin.command: sudo firewall-cmd --runtime-to-permanent
 
 # TODO: Make sure to check most of the commands with changed_when to avoid problems
 - name: Define server hostname
@@ -104,7 +96,7 @@
 
 - name: Copy docker-compose file into the corresponding system directory
   ansible.builtin.copy:
-    src: ../files/docker-compose.yml # This needs to be updated
+    src: ../files/docker-compose.yml
     dest: /opt/mastodon/docker-compose.yml
 
 - name: Generate SECRET_KEY_BASE secret
@@ -197,83 +189,20 @@
     path: /opt/mastodon/application.env
     state: touch
 
+- name: Generate application.env file based on template
+  ansible.builtin.template:
+    src: ../templates/application_template.j2
+    dest: /opt/mastodon/application.env
+
 - name: Initialize empty application configuration (database.env)
   ansible.builtin.file:
     path: /opt/mastodon/database.env
     state: touch
 
-- name: Populate application.env file with basic configuration template
-  ansible.builtin.copy:
-    src: ../files/application_template.txt
-    dest: /opt/mastodon/application.env
-
-- name: Populate database.env file with basic configuration template
-  ansible.builtin.copy:
-    src: ../files/database_template.txt
+- name: Generate database.env file based on template
+  ansible.builtin.template:
+    src: ../templates/database_template.j2
     dest: /opt/mastodon/database.env
-
-- name: Set generated values in the application.env configuration file (SECRET_KEY_BASE)
-  ansible.builtin.lineinfile:
-    path: /opt/mastodon/application.env
-    line: "SECRET_KEY_BASE={{ secret_key_base.stdout_lines[0] }}"
-    regexp: '^SECRET_KEY_BASE='
-    state: present
-
-- name: Set generated values in the application.env configuration file (OTP_SECRET)
-  ansible.builtin.lineinfile:
-    path: /opt/mastodon/application.env
-    line: "OTP_SECRET={{ otp_secret.stdout_lines[0] }}"
-    regexp: '^OTP_SECRET='
-    state: present
-
-- name: Set generated values in the application.env configuration file (VAPID_PRIVATE_KEY)
-  ansible.builtin.lineinfile:
-    path: /opt/mastodon/application.env
-    line: "VAPID_PRIVATE_KEY={{ vapid_private_key.stdout_lines[0] }}"
-    regexp: '^VAPID_PRIVATE_KEY='
-    state: present
-
-- name: Set generated values in the application.env configuration file (VAPID_PUBLIC_KEY)
-  ansible.builtin.lineinfile:
-    path: /opt/mastodon/application.env
-    line: "VAPID_PUBLIC_KEY={{ vapid_public_key.stdout_lines[0] }}"
-    regexp: '^VAPID_PUBLIC_KEY='
-    state: present
-
-- name: Set generated values in the application.env configuration file (POSTGRESQL_SECRET)
-  ansible.builtin.lineinfile:
-    path: /opt/mastodon/database.env
-    line: "POSTGRESQL_PASSWORD={{ postgresql_secret.stdout_lines[0] }}"
-    regexp: '^POSTGRES_PASSWORD='
-    state: present
-
-- name: Set generated values in the application.env configuration file (Mastodon Database Password)
-  ansible.builtin.lineinfile:
-    path: /opt/mastodon/database.env
-    line: "DB_PASS={{ postgresql_secret.stdout_lines[0] }}"
-    regexp: '^DB_PASS='
-    state: present
-
-- name: Set generated values in the application.env configuration file (ELASTICSEARCH_SECRET)
-  ansible.builtin.lineinfile:
-    path: /opt/mastodon/database.env
-    line: "ELASTICSEARCH_PASSWORD={{ elasticsearch_secret.stdout_lines[0] }}"
-    regexp: '^ELASTICSEARCH_PASSWORD='
-    state: present
-
-- name: Set generated values in the application.env configuration file (Mastodon Elasticsearch Password)
-  ansible.builtin.lineinfile:
-    path: /opt/mastodon/database.env
-    line: "ELASTICSEARCH_PASSWORD={{ elasticsearch_secret.stdout_lines[0] }}"
-    regexp: '^ES_PASS='
-    state: present
-
-- name: Set generated values in the application.env configuration file (Database url)
-  ansible.builtin.lineinfile:
-    path: /opt/mastodon/database.env
-    line: "#DATABASE_URL={{ database_url }}"
-    regexp: '^#DATABASE_URL='
-    state: present
 
 - name: Create temporary volume
   become: true
