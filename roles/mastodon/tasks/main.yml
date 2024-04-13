@@ -251,6 +251,13 @@
     path: /etc/nginx/sites-enabled/default
     state: absent
 
+- name: Create sites-enabled directory again
+  become: true
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled
+    state: directory
+    recurse: true
+
 - name: Create a directory for SSL certificates
   become: true
   ansible.builtin.file:
@@ -261,10 +268,37 @@
 - name: Create certificate and private key for Nginx # Still need to define certain configuration values for this meanwhile we'll use simple command.
   become: true
   ansible.builtin.command:
-    cmd: 'sudo openssl req -subj "/commonName=example.org/" -x509 -nodes -days 730 -newkey rsa:2048 -keyout /etc/nginx/ssl/example.org.key -out /etc/nginx/ssl/example.org.crt'
+    cmd: 'sudo openssl req -subj "/commonName=example.org/" -x509 -nodes -days 730 -newkey rsa:2048 -keyout /etc/nginx/ssl/{{ mastodon_server_hostname }}.key -out /etc/nginx/ssl/{{ mastodon_server_hostname }}.crt'
 
 - name: Create virtual host
   become: true
   ansible.builtin.template:
     src: ../templates/mastodon_nginx_config.j2
     dest: /etc/nginx/sites-available/mastodon
+
+- name: Enable virtual host # Should try to do it with ansible.builtin.file
+  become: true
+  ansible.builtin.command:
+    cmd: 'sudo ls -s /etc/nginx/sites-available/mastodon /etc/nginx/sites-enabled'
+
+- name: Restart web server
+  become: true
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: restarted
+
+- name: Pull docker-compose images
+  become: true
+  ansible.builtin.command:
+    cmd: 'sudo docker-compose -f /opt/mastodon/docker-compose.yml pull'
+
+- name: Create mastodon service file
+  become: true
+  ansible.builtin.copy:
+    src: ../files/mastodon.service
+    dest: /etc/systemd/system/mastodon.service
+
+- name: Reload daemons
+  become: true
+  ansible.builtin.systemd_service:
+    daemon_reload: true
