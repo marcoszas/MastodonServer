@@ -1,3 +1,3 @@
 ---
-mastodon_server_hostname: test
-mastodon_generate_secrets: true # The idea is to use this variable as a way to avoid inserting new secrets in the configuration file.
+mastodon_server_hostname: mastodon
+mastodon_generate_secrets: false # The idea is to use this variable as a way to avoid inserting new secrets in the configuration file.

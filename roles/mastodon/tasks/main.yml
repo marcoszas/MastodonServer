@@ -1,23 +1,35 @@
 ---
 - include_tasks: install_dependencies.ansible.yml
 
+- name: Define server hostname
+  become: true
+  ansible.builtin.command: "sudo hostnamectl --static set-hostname {{ mastodon_server_hostname }}"
+
+- name: Debuggin purposes
+  ansible.builtin.debug:
+    var: mastodon_generate_secrets
+
 - name: List external interfaces
+  become: true
   ansible.builtin.command: ip -br a
   register: ip_output
   changed_when: false
 
 - name: Extract external interfaces
+  become: true
   ansible.builtin.set_fact:
     external_interfaces: "{{ ip_output.stdout_lines | select('match', '.*\\s+UP\\s+.*') | map('regex_replace', '^([^\\s]+).*$', '\\1') | list }}"
 
 - name: Configure firewall
+  become: true
   ansible.posix.firewalld:
     zone: public
-    interface: "{{ external_interfaces }}"
+    interface: enp0s1 # we need to change this because at the end there are several interfaces UP
     permanent: true
     state: enabled
 
 - name: Enable http service
+  become: true
   ansible.posix.firewalld:
     zone: public
     service: http
@@ -25,6 +37,7 @@
     state: enabled
 
 - name: Enable https service
+  become: true
   ansible.posix.firewalld:
     zone: public
     service: https
@@ -32,6 +45,7 @@
     state: enabled
 
 - name: Ensure that docker interface is in a trusted zone
+  become: true
   ansible.posix.firewalld:
     zone: trusted
     interface: docker0
@@ -39,41 +53,57 @@
     state: enabled
 
 - name: Add masquerade
+  become: true
   ansible.posix.firewalld:
     zone: public
     masquerade: true
     permanent: true
     state: enabled
 
+- name: Add Docker to allowed groups
+  become: true
+  ansible.builtin.command:
+    cmd: "sudo usermod -a -G docker $USER"
+
+- name: Alter Docker configuration to log messages to journald
+  become: true
+  ansible.builtin.copy:
+    src: ../files/daemon.json
+    dest: /etc/docker/daemon.json
+
 # TODO: Make sure to check most of the commands with changed_when to avoid problems
-- name: Define server hostname
-  ansible.builtin.command: "sudo hostnamectl --static set-hostname {{ mastodon_server_hostname }}"
 
 - name: Increase limit of mmap counts
+  become: true
   ansible.builtin.shell: echo "vm.max_map_count=262144" | sudo tee /etc/sysctl.d/90-max_map_count.conf
 
 - name: Apply changes of limit in mmpa counts
+  become: true
   ansible.builtin.command: sudo sysctl --system
 
 - name: Create application directory
+  become: true
   ansible.builtin.file:
     path: /opt/mastodon
     state: directory
     recurse: true # This allows the creation of the parent directories if they don't exist
 
 - name: Create directories related to database operations (PostgreSQL)
+  become: true
   ansible.builtin.file:
     path: /opt/mastodon/database/postgresql
     state: directory
     recurse: true
 
 - name: Create directories related to database operations (Redis)
+  become: true
   ansible.builtin.file:
     path: /opt/mastodon/database/redis
     state: directory
     recurse: true
 
 - name: Create directories related to database operations (elasticsearch)
+  become: true
   ansible.builtin.file:
     path: /opt/mastodon/database/elasticsearch
     state: directory
@@ -81,6 +111,7 @@
     recurse: true
 
 - name: Create directories related to web operations (public).
+  become: true
   ansible.builtin.file:
     path: /opt/mastodon/web/public
     state: directory
@@ -88,6 +119,7 @@
     recurse: true
 
 - name: Create directories related to web operations (system).
+  become: true
   ansible.builtin.file:
     path: /opt/mastodon/web/system
     state: directory
@@ -95,114 +127,157 @@
     recurse: true
 
 - name: Copy docker-compose file into the corresponding system directory
+  become: true
   ansible.builtin.copy:
     src: ../files/docker-compose.yml
     dest: /opt/mastodon/docker-compose.yml
 
 - name: Generate SECRET_KEY_BASE secret
+  become: true
   ansible.builtin.command: openssl rand -hex 64
   register: secret_key_base
+  when: mastodon_generate_secrets == true
 
 - name: Generate OTP_SECRET secret
+  become: true
   ansible.builtin.command: openssl rand -hex 64
   register: otp_secret
+  when: mastodon_generate_secrets == true
 
 - name: Generate VAPID_PRIVATE_KEY
+  become: true
   ansible.builtin.command: openssl ecparam -name prime256v1 -genkey -noout -out vapid_private_key.pem
+  when: mastodon_generate_secrets == true
 
 - name: Generate VAPID_PUBLIC_KEY
+  become: true
   ansible.builtin.command: openssl ec -in vapid_private_key.pem -pubout -out vapid_public_key.pem
+  when: mastodon_generate_secrets == true
 
 - name: Trim generated VAPID_PRIVATE_KEY
+  become: true
   ansible.builtin.shell: |
     cat vapid_private_key.pem | sed -e "1 d" -e "$ d" | tr -d "\n"
     echo
   register: vapid_private_key
+  when: mastodon_generate_secrets == true
 
 - name: Trim generate VAPID_PUBLIC_KEY
+  become: true
   ansible.builtin.shell: |
     cat vapid_public_key.pem | sed -e "1 d" -e "$ d" | tr -d "\n"
     echo
   register: vapid_public_key
+  when: mastodon_generate_secrets == true
 
 - name: Generate PostgreSQL secret
+  become: true
   ansible.builtin.command: openssl rand -hex 15
   register: postgresql_secret
+  when: mastodon_generate_secrets == true
 
 - name: Generate elasticsearch secret
+  become: true
   ansible.builtin.command: openssl rand -hex 15
   register: elasticsearch_secret
+  when: mastodon_generate_secrets == true
 
 - name: Create file to store secrets
+  become: true
   ansible.builtin.file:
     path: /opt/mastodon/secrets.txt
     state: touch
+  when: mastodon_generate_secrets == true
 
 - name: Store generated secrets in the secrets file (SECRET_KEY_BASE)
+  become: true
   ansible.builtin.lineinfile:
     path: /opt/mastodon/secrets.txt
     line: "SECRET_KEY_BASE={{ secret_key_base.stdout_lines[0] }}"
     regexp: '^SECRET_KEY_BASE='
     state: present
+  when: mastodon_generate_secrets == true
 
 - name: Store generated secrets in the secrets file (OTP_SECRET)
+  become: true
   ansible.builtin.lineinfile:
     path: /opt/mastodon/secrets.txt
     line: "OTP_SECRET={{ otp_secret.stdout_lines[0] }}"
     regexp: '^OTP_SECRET='
     state: present
+  when: mastodon_generate_secrets == true
 
 - name: Store generated secrets in the secrets file (VAPID_PRIVATE_KEY)
+  become: true
   ansible.builtin.lineinfile:
     path: /opt/mastodon/secrets.txt
     line: "VAPID_PRIVATE_KEY={{ vapid_private_key.stdout_lines[0] }}"
     regexp: '^VAPID_PRIVATE_KEY='
     state: present
+  when: mastodon_generate_secrets == true
 
 - name: Store generated secrets in the secrets file (VAPID_PUBLIC_KEY)
+  become: true
   ansible.builtin.lineinfile:
     path: /opt/mastodon/secrets.txt
     line: "VAPID_PUBLIC_KEY={{ vapid_public_key.stdout_lines[0] }}"
     regexp: '^VAPID_PUBLIC_KEY='
     state: present
+  when: mastodon_generate_secrets == true
 
 - name: Store generated secrets in the secrets file (POSTGRESQL_SECRET)
+  become: true
   ansible.builtin.lineinfile:
     path: /opt/mastodon/secrets.txt
     line: "POSTGRESQL_SECRET={{ postgresql_secret.stdout_lines[0] }}"
     regexp: '^POSTGRESQL_SECRET='
     state: present
+  when: mastodon_generate_secrets == true
 
 - name: Store generated secrets in the secrets file (ELASTICSEARCH_SECRET)
+  become: true
   ansible.builtin.lineinfile:
     path: /opt/mastodon/secrets.txt
     line: "ELASTICSEARCH_SECRET={{ elasticsearch_secret.stdout_lines[0] }}"
     regexp: '^ELASTICSEARCH_SECRET='
     state: present
+  when: mastodon_generate_secrets == true
 
 - name: Generate database URL
+  become: true
   ansible.builtin.set_fact:
     database_url: "postgres://mastodon:{{ postgresql_secret.stdout_lines[0] }}@postgresql:5432/mastodon_production"
+  when: mastodon_generate_secrets == true
 
 - name: Initialize empty application configuration (application.env)
+  become: true
   ansible.builtin.file:
     path: /opt/mastodon/application.env
     state: touch
+    mode: 600
+  when: mastodon_generate_secrets == true
 
 - name: Generate application.env file based on template
+  become: true
   ansible.builtin.template:
     src: ../templates/application_template.j2
     dest: /opt/mastodon/application.env
+  when: mastodon_generate_secrets == true
 
 - name: Initialize empty application configuration (database.env)
+  become: true
   ansible.builtin.file:
     path: /opt/mastodon/database.env
     state: touch
+    mode: 600
+  when: mastodon_generate_secrets == true
 
 - name: Generate database.env file based on template
+  become: true
   ansible.builtin.template:
     src: ../templates/database_template.j2
     dest: /opt/mastodon/database.env
+  when: mastodon_generate_secrets == true
 
 - name: Create temporary volume
   become: true
@@ -237,10 +312,10 @@
 #     container: temporary_container
 #     command: "/bin/bash cp -r /opt/mastodon/web/public/* /static/"
 
-# - name: Remove temporary volume
-#   become: true
-#   ansible.builtin.command:
-#     cmd: 'sudo docker volume rm temporary_static'
+- name: Remove temporary volume
+  become: true
+  ansible.builtin.command:
+    cmd: 'sudo docker volume rm temporary_static'
   # community.docker.docker_volume:
   #   name: temporary_static
   #   state: absent
@@ -269,12 +344,14 @@
   become: true
   ansible.builtin.command:
     cmd: 'sudo openssl req -subj "/commonName=example.org/" -x509 -nodes -days 730 -newkey rsa:2048 -keyout /etc/nginx/ssl/{{ mastodon_server_hostname }}.key -out /etc/nginx/ssl/{{ mastodon_server_hostname }}.crt'
+  when: mastodon_generate_secrets == true
 
 - name: Create virtual host
   become: true
   ansible.builtin.template:
     src: ../templates/mastodon_nginx_config.j2
     dest: /etc/nginx/sites-available/mastodon
+  when: mastodon_generate_secrets == true
 
 - name: Enable virtual host # Should try to do it with ansible.builtin.file
   become: true
@@ -302,3 +379,32 @@
   become: true
   ansible.builtin.systemd_service:
     daemon_reload: true
+
+- name: Start postgresql database and pgbounce
+  become: true
+  ansible.builtin.command:
+    cmd: 'sudo docker-compose -f /opt/mastodon/docker-compose.yml up -d postgresql redis redis-volatile'
+
+# We need to create an intermediate task here that checks for the status of the previously
+# mounted containers to avoid running into issues, we could maybe use a command that asks
+# for the status of the containers for a certain amount of time until they're up.
+
+- name: Temporary sleep
+  become: true
+  ansible.builtin.command:
+    cmd: 'sleep 40'
+
+- name: Start database using shell container
+  become: true
+  ansible.builtin.command:
+    cmd: 'sudo docker-compose -f /opt/mastodon/docker-compose.yml run --rm shell bundle exec rake db:setup'
+
+- name: Start and enable service
+  become: true
+  ansible.builtin.systemd_service:
+    enabled: true
+
+- name: Create user
+  become: true
+  ansible.builtin.command:
+    cmd: 'sudo docker-compose -f /opt/mastodon/docker-compose.yml run --rm shell bin/tootctl accounts create milosz --email nonexistingmilosz@google.com --confirmed --role Owner'
