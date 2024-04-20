@@ -1,0 +1,66 @@
+---
+- name: Define server hostname
+  become: true
+  ansible.builtin.command: "sudo hostnamectl --static set-hostname {{ mastodon_server_hostname }}"
+
+- name: List external interfaces
+  become: true
+  ansible.builtin.command: ip -br a
+  register: ip_output
+  changed_when: false
+
+- name: Extract external interfaces
+  become: true
+  ansible.builtin.set_fact:
+    external_interfaces: "{{ ip_output.stdout_lines | select('match', '.*\\s+UP\\s+.*') | map('regex_replace', '^([^\\s]+).*$', '\\1') | list }}"
+
+- name: Configure firewall
+  become: true
+  ansible.posix.firewalld:
+    zone: public
+    interface: enp0s1 # we need to change this because at the end there are several interfaces UP
+    permanent: true
+    state: enabled
+
+- name: Enable http service
+  become: true
+  ansible.posix.firewalld:
+    zone: public
+    service: http
+    permanent: true
+    state: enabled
+
+- name: Enable https service
+  become: true
+  ansible.posix.firewalld:
+    zone: public
+    service: https
+    permanent: true
+    state: enabled
+
+- name: Ensure that docker interface is in a trusted zone
+  become: true
+  ansible.posix.firewalld:
+    zone: trusted
+    interface: docker0
+    permanent: true
+    state: enabled
+
+- name: Add masquerade
+  become: true
+  ansible.posix.firewalld:
+    zone: public
+    masquerade: true
+    permanent: true
+    state: enabled
+
+- name: Add Docker to allowed groups
+  become: true
+  ansible.builtin.command:
+    cmd: "sudo usermod -a -G docker $USER"
+
+- name: Alter Docker configuration to log messages to journald
+  become: true
+  ansible.builtin.copy:
+    src: ../files/daemon.json
+    dest: /etc/docker/daemon.json
