@@ -1,5 +1,5 @@
 - name: Install Mastodon Web Server in the host machine
-  hosts: "192.168.64.5"
+  hosts: mastodon_host
   become: true
   roles:
     - mastodon
