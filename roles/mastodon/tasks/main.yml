@@ -13,7 +13,7 @@
   become: true
   ansible.builtin.shell: echo "vm.max_map_count=262144" | sudo tee /etc/sysctl.d/90-max_map_count.conf
 
-- name: Apply changes of limit in mmpa counts
+- name: Apply changes for the limit in mmpa counts
   become: true
   ansible.builtin.command: sudo sysctl --system
 
@@ -78,26 +78,11 @@
     database_url: "postgres://mastodon:{{ postgresql_secret.stdout_lines[0] }}@postgresql:5432/mastodon_production"
   when: mastodon_generate_secrets
 
-- name: Initialize empty application configuration (application.env)
-  become: true
-  ansible.builtin.file:
-    path: /opt/mastodon/application.env
-    state: touch
-    mode: 600
-  when: mastodon_generate_secrets
-
 - name: Generate application.env file based on template
   become: true
   ansible.builtin.template:
     src: ../templates/application_template.j2
     dest: /opt/mastodon/application.env
-  when: mastodon_generate_secrets
-
-- name: Initialize empty application configuration (database.env)
-  become: true
-  ansible.builtin.file:
-    path: /opt/mastodon/database.env
-    state: touch
     mode: 600
   when: mastodon_generate_secrets
 
@@ -106,6 +91,7 @@
   ansible.builtin.template:
     src: ../templates/database_template.j2
     dest: /opt/mastodon/database.env
+    mode: 600
   when: mastodon_generate_secrets
 
 - name: Create temporary volume
