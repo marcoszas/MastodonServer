@@ -1,5 +1,5 @@
 ---
 mastodon_server_hostname: mastodon
-mastodon_generate_secrets: false # The idea is to use this variable as a way to avoid inserting new secrets in the configuration file.
-mastodon_install_dependencies: false
-mastodon_perform_initial_config: false
+mastodon_install_dependencies: true
+mastodon_perform_initial_config: true
+mastodon_generate_secrets: true

@@ -159,14 +159,14 @@
   become: true
   ansible.builtin.command:
     cmd: 'sudo openssl req -subj "/commonName=example.org/" -x509 -nodes -days 730 -newkey rsa:2048 -keyout /etc/nginx/ssl/{{ mastodon_server_hostname }}.key -out /etc/nginx/ssl/{{ mastodon_server_hostname }}.crt'
-  when: mastodon_generate_secrets == true
+  when: mastodon_generate_secrets
 
 - name: Create virtual host
   become: true
   ansible.builtin.template:
     src: ../templates/mastodon_nginx_config.j2
     dest: /etc/nginx/sites-available/mastodon
-  when: mastodon_generate_secrets == true
+  when: mastodon_generate_secrets
 
 - name: Enable virtual host # Should try to do it with ansible.builtin.file
   become: true
@@ -202,7 +202,8 @@
 
 # We need to create an intermediate task here that checks for the status of the previously
 # mounted containers to avoid running into issues, we could maybe use a command that asks
-# for the status of the containers for a certain amount of time until they're up.
+# for the status of the containers for a certain amount of time until they're up, or try
+# executing this using the Docker module for Ansible.
 
 # - name: Temporary sleep
 #   become: true
