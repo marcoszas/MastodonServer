@@ -79,14 +79,15 @@ Now Ansible should be able to connect to the target host machine and execute the
 
 ##### 3. Install the necessary ansible-galaxy collections
 
-- To install **ansible.posix** run
+- To install the required collections run
     ```shell
-    ansible-galaxy collection install ansible.posix
+    ansible-galaxy install -r requirements.yml
     ```
-    If the control node is a MacOS machine it may run into a certificates problem, it can be avoided by using the "--ignore-certs" flag like so
-    ```shell
-    ansible-galaxy collection install ansible.posix --ignore-certs
-    ```
+
+If the control node is a MacOS machine it may run into a certificates problem, it can be avoided by using the "--ignore-certs" flag like so
+```shell
+ansible-galaxy install -r requirements.yml --ignore-certs
+```
 
 ##### 4. Configure the Ansible inventory file with the target host connection information
 1. Open the inventory.ini file located in the repository directory.
