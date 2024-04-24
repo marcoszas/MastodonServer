@@ -1,2 +1,2 @@
 .DS_Store
-vars/main.yml
+roles/mastodon/vars/main.yml
