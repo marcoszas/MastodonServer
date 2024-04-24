@@ -125,6 +125,17 @@ mastodon_perform_initial_config: true
 mastodon_generate_secrets: true
 ```
 
+If for whatever reason the installation script needs to be launched again, the configuration should be changed to at least the following state
+```yaml
+mastodon_server_hostname: mastodon
+mastodon_install_dependencies: true
+mastodon_perform_initial_config: true
+mastodon_generate_secrets: false
+```
+Otherwise the secret generation could cause some errors if the docker containers are not restarted to apply the new configuration.
+
+> This is set to be improved in the future so no further configuration needs to be done.
+
 ## Contributing
 
 If you wish to contribute to the project, please fork the repository and use a feature branch. Pull requests will be reviewed as fast as possible.

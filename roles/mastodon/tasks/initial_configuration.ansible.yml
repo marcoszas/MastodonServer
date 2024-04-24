@@ -3,22 +3,20 @@
   become: true
   ansible.builtin.command: "sudo hostnamectl --static set-hostname {{ mastodon_server_hostname }}"
 
-- name: List external interfaces
-  become: true
-  ansible.builtin.command: ip -br a
-  register: ip_output
-  changed_when: false
-
 - name: Extract external interfaces
   become: true
-  ansible.builtin.set_fact:
-    external_interfaces: "{{ ip_output.stdout_lines | select('match', '.*\\s+UP\\s+.*') | map('regex_replace', '^([^\\s]+).*$', '\\1') | list }}"
+  ansible.builtin.shell: ip -br a | grep -oE 'enp[0-9]+s[0-9]+'
+  register: ip_output
+
+- name: Debug task
+  ansible.builtin.debug:
+    msg: "{{ ip_output.stdout_lines }}"
 
 - name: Configure firewall
   become: true
   ansible.posix.firewalld:
     zone: public
-    interface: enp0s1 # we need to change this because at the end there are several interfaces UP
+    interface: "{{ ip_output.stdout_lines[0] }}"
     permanent: true
     state: enabled
 
