@@ -1,0 +1,168 @@
+version: '3'
+
+services:
+  postgresql:
+    image: postgres:{{ mastodon_postgres_version }}
+    env_file: database.env
+    restart: always
+    shm_size: 256mb
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'postgres']
+    volumes:
+      - postgresql:/var/lib/postgresql/data
+    networks:
+      - internal_network
+
+#  pgbouncer:
+#    image: edoburu/pgbouncer:1.12.0
+#    env_file: database.env
+#    depends_on:
+#      - postgresql
+#    healthcheck:
+#      test: ['CMD', 'pg_isready', '-h', 'localhost']
+#    networks:
+#      - internal_network
+
+  redis:
+    image: redis:{{ mastodon_redis_version }}
+    restart: always
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+    volumes:
+      - redis:/data
+    networks:
+      - internal_network
+
+  redis-volatile:
+    image: redis:7
+    restart: always
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+    networks:
+      - internal_network
+
+  elasticsearch:
+    image: elasticsearch:{{ mastodon_elasticsearch_version }}
+    restart: always
+    env_file: database.env
+    environment:
+      - cluster.name=elasticsearch-mastodon
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=true
+      - ingest.geoip.downloader.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z elasticsearch 9200"]
+    volumes:
+      - elasticsearch:/usr/share/elasticsearch/data
+    networks:
+      - internal_network
+
+  website:
+    image: tootsuite/mastodon:{{ mastodon_mastodon_version }}
+    env_file:
+      - application.env
+      - database.env
+    command: bash -c "bundle exec rails s -p 3000"
+    restart: always
+    depends_on:
+      - postgresql
+#      - pgbouncer
+      - redis
+      - redis-volatile
+      - elasticsearch
+    ports:
+      - '127.0.0.1:3000:3000'
+    networks:
+      - internal_network
+      - external_network
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q --spider --proxy=off localhost:3000/health || exit 1']
+    volumes:
+      - uploads:/mastodon/public/system
+
+  shell:
+    image: tootsuite/mastodon:{{ mastodon_mastodon_version }}
+    env_file:
+      - application.env
+      - database.env
+    command: /bin/bash
+    restart: "no"
+    networks:
+      - internal_network
+      - external_network
+    volumes:
+      - uploads:/mastodon/public/system
+
+  streaming:
+    image: tootsuite/mastodon:{{ mastodon_mastodon_version }}
+    env_file:
+      - application.env
+      - database.env
+    command: node ./streaming
+    restart: always
+    depends_on:
+      - postgresql
+#      - pgbouncer
+      - redis
+      - redis-volatile
+      - elasticsearch
+    ports:
+      - '127.0.0.1:4000:4000'
+    networks:
+      - internal_network
+      - external_network
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q --spider --proxy=off localhost:4000/api/v1/streaming/health || exit 1']
+
+  sidekiq:
+    image: tootsuite/mastodon:{{ mastodon_mastodon_version }}
+    env_file:
+      - application.env
+      - database.env
+    command: bundle exec sidekiq
+    restart: always
+    depends_on:
+      - postgresql
+#      - pgbouncer
+      - redis
+      - redis-volatile
+      - website
+    networks:
+      - internal_network
+      - external_network
+    healthcheck:
+      test: ['CMD-SHELL', "ps aux | grep '[s]idekiq\ 6' || false"]
+    volumes:
+      - uploads:/mastodon/public/system
+
+networks:
+  external_network:
+  internal_network:
+    internal: true
+
+volumes:
+  postgresql:
+    driver_opts:
+      type: none
+      device: /opt/mastodon/database/postgresql
+      o: bind
+  redis:
+    driver_opts:
+      type: none
+      device: /opt/mastodon/database/redis
+      o: bind
+  elasticsearch:
+    driver_opts:
+      type: none
+      device: /opt/mastodon/database/elasticsearch
+      o: bind
+  uploads:
+    driver_opts:
+      type: none
+      device: /opt/mastodon/web/system
+      o: bind

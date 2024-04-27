@@ -64,8 +64,8 @@
 
 - name: Copy docker-compose file into the corresponding system directory
   become: true
-  ansible.builtin.copy:
-    src: ../files/docker-compose.yml
+  ansible.builtin.template:
+    src: ../templates/docker-compose_template.j2
     dest: /opt/mastodon/docker-compose.yml
 
 - name: Generate secrets
@@ -199,16 +199,6 @@
   become: true
   ansible.builtin.command:
     cmd: 'sudo docker-compose -f /opt/mastodon/docker-compose.yml up -d postgresql redis redis-volatile'
-
-# We need to create an intermediate task here that checks for the status of the previously
-# mounted containers to avoid running into issues, we could maybe use a command that asks
-# for the status of the containers for a certain amount of time until they're up, or try
-# executing this using the Docker module for Ansible.
-
-# - name: Temporary sleep
-#   become: true
-#   ansible.builtin.command:
-#     cmd: 'sleep 40'
 
 - name: Check for database creation
   become: true

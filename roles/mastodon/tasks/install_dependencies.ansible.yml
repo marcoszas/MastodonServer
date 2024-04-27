@@ -5,20 +5,24 @@
 
 - name: Install Docker
   ansible.builtin.apt:
-    name: docker.io
+    name: docker.io="{{ mastodon_docker_io_version }}"
     state: present
+    allow_downgrade: true
 
 - name: Install Docker-compose
   ansible.builtin.apt:
-    name: docker-compose
+    name: docker-compose="{{ mastodon_docker_compose_version }}"
     state: present
+    allow_downgrade: true
 
 - name: Install Firewalld
   ansible.builtin.apt:
-    name: firewalld
+    name: firewalld="{{ mastodon_firewalld_version }}"
     state: present
+    allow_downgrade: true
 
 - name: Install Nginx
   ansible.builtin.apt:
-    name: nginx
+    name: nginx="{{ mastodon_nginx_version }}"
     state: present
+    allow_downgrade: true
