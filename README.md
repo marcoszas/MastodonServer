@@ -137,9 +137,25 @@ Otherwise the secret generation could cause some errors if the docker containers
 
 > This is set to be improved in the future so no further configuration needs to be done.
 
+### Updating dependencies
+
+The versions of the dependencies for the Mastodon server can be updated or downgraded by setting the desired versions in the vars file located in /roles/mastodon/defaults/main.yml.
+```yaml
+---
+mastodon_postgres_version: 14
+mastodon_redis_version: 7
+mastodon_elasticsearch_version: 7.17.3
+mastodon_mastodon_version: v4.0.2
+mastodon_docker_io_version: 24.0.5-0ubuntu1~22.04.1
+mastodon_docker_compose_version: 1.29.2-1
+mastodon_firewalld_version: 1.1.1-1ubuntu1
+mastodon_nginx_version: 1.18.0-6ubuntu14.4
+```
+
 ## Contributing
 
 If you wish to contribute to the project, please fork the repository and use a feature branch. Pull requests will be reviewed as fast as possible.
+The [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) standard is recommended when uploading commits to the repository.
 
 ## Licensing
 
