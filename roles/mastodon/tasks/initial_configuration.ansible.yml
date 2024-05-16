@@ -8,10 +8,6 @@
   ansible.builtin.shell: ip -br a | grep -oE 'enp[0-9]+s[0-9]+'
   register: ip_output
 
-- name: Debug task
-  ansible.builtin.debug:
-    msg: "{{ ip_output.stdout_lines }}"
-
 - name: Configure firewall
   become: true
   ansible.posix.firewalld:

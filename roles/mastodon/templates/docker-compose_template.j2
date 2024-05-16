@@ -34,7 +34,7 @@ services:
       - internal_network
 
   redis-volatile:
-    image: redis:7
+    image: redis:{{ mastodon_redis_version }}
     restart: always
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
