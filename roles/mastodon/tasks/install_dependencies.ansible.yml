@@ -3,26 +3,261 @@
   ansible.builtin.apt:
     update_cache: true
 
-- name: Install Docker
+- name: Upgrade packages
   ansible.builtin.apt:
-    name: docker.io={{ mastodon_docker_io_version }}
+    upgrade: true
+
+- name: Install Fail2ban
+  ansible.builtin.apt:
+    name: fail2ban
     state: present
     allow_downgrade: true
 
-- name: Install Docker-compose
+- name: Install firewall (iptables)
   ansible.builtin.apt:
-    name: docker-compose={{ mastodon_docker_compose_version }}
+    name: iptables-persistent
     state: present
     allow_downgrade: true
 
-- name: Install Firewalld
+- name: Install curl
   ansible.builtin.apt:
-    name: firewalld={{ mastodon_firewalld_version }}
+    name: curl
     state: present
     allow_downgrade: true
 
-- name: Install Nginx
+- name: Install wget
   ansible.builtin.apt:
-    name: nginx={{ mastodon_nginx_version }}
+    name: wget
     state: present
     allow_downgrade: true
+
+- name: Install gnupg
+  ansible.builtin.apt:
+    name: gnupg
+    state: present
+    allow_downgrade: true
+
+- name: Install apt-transport-https
+  ansible.builtin.apt:
+    name: apt-transport-https
+    state: present
+    allow_downgrade: true
+
+- name: Install lsb-release
+  ansible.builtin.apt:
+    name: lsb-release
+    state: present
+    allow_downgrade: true
+
+- name: Install ca-certificate
+  ansible.builtin.apt:
+    name: ca-certificate
+    state: present
+    allow_downgrade: true
+
+- name: Install Node.js
+  ansible.builtin.apt_key:
+    url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+    state: present
+    keyring: /etc/apt/keyrings/nodesource.gpg
+
+- name: Add NodeSource repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main"
+    state: present
+    filename: nodesource.list
+
+- name: Install PostgreSQL
+  ansible.builtin.apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+    keyring: /usr/share/keyrings/postgresql.asc
+
+- name: Add PostgreSQL repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/postgresql.asc] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main"
+    state: present
+    filename: postgresql.list
+
+- name: Install system packages
+  ansible.builtin.apt:
+    pkg:
+      - imagemagick
+      - ffmpeg
+      - libpq-dev
+      - libxml2-dev
+      - libxslt1-dev
+      - file
+      - git-core
+      - g++
+      - libprotobuf-dev
+      - protobuf-compiler
+      - pkg-config
+      - gcc
+      - autoconf
+      - bison
+      - build-essential
+      - libssl-dev
+      - libyaml-dev
+      - libreadline6-dev
+      - zlib1g-dev
+      - libncurses5-dev
+      - libffi-dev
+      - libgdbm-dev
+      - nginx
+      - nodejs
+      - redis-server
+      - redis-tools
+      - postgresql
+      - postgresql-contrib
+      - certbot
+      - python3-certbot-nginx
+      - libidn11-dev
+      - libicu-dev
+      - libjemalloc-dev
+    state: present
+
+- name: Enable corepack
+  ansible.builtin.command:
+    cmd: 'corepack enable'
+
+- name: Set Yarn
+  ansible.builtin.command:
+    cmd: 'yarn set version classic'
+
+# We might need to add the system option.
+- name: Add Mastodon user
+  ansible.builtin.user:
+    name: mastodon
+    shell: /usr/sbin/nologin
+
+# We have to use become_user to change the user the task is being executed on.
+- name: Clone Ruby environment (rbenv)
+  become: true
+  become_user: mastodon
+  ansible.builtin.git:
+    repo: https://github.com/rbenv/rbenv.git
+    dest: ~/.rbenv
+    version: 1.2.0
+
+# - name: Add rbenv to the PATH
+#   become: true
+#   become_user: mastodon
+#   ansible.builtin.lineinfile:
+#     path: ~/.bashrc
+#     line: 'export PATH="$HOME/.rbenv/bin:$PATH"'
+#     insertafter: EOF
+#   when: lookup('file', '~/.bashrc') is not search('export PATH="$HOME/.rbenv/bin:$PATH"')
+
+# - name: Add rbenv to the PATH
+#   become: true
+#   become_user: mastodon
+#   ansible.builtin.lineinfile:
+#     path: ~/.bashrc
+#     line: 'eval "$(rbenv init -)"'
+#     insertafter: EOF
+#   when: lookup('file', '~/.bashrc') is not search('eval "$(rbenv init -)"')
+
+- name: Add rbenv to the PATH
+  become: true
+  become_user: mastodon
+  ansible.builtin.lineinfile:
+    path: ~/.bashrc
+    line: '{{ item }}'
+  with_items:
+    - 'export PATH="$HOME/.rbenv/bin:$PATH"'
+    - 'eval "$(rbenv init -)"'
+
+- name: Reload shell
+  become: true
+  become_user: mastodon
+  ansible.builtin.command:
+    cmd: exec bash
+
+- name: Install Ruby environment build (rbenv-build)
+  become: true
+  become_user: mastodon
+  ansible.builtin.git:
+    repo: https://github.com/rbenv/ruby-build.git
+    dest: ~/.rbenv/plugins/ruby-build
+    version: ruby-build 20240517
+
+- name: Check if rbenv is installed
+  become: true
+  become_user: mastodon
+  ansible.builtin.command:
+    cmd: rbenv versions --bare
+  register: rbenv_versions
+  changed_when: false
+
+- name: Check if rbenv is present
+  ansible.builtin.set_fact:
+    ruby_installed: "{{ ruby_version in rbenv_versions.stdout_lines }}"
+
+# TODO: We need to take a look at this
+- name: Install rbenv
+  become: true
+  become_user: mastodon
+  ansible.builtin.command:
+    cmd: '$RUBY_CONFIGURE_OPTS rbenv install {{ mastodon_ruby_version }}'
+  environment: RUBY_CONFIGURE_OPTS:RUBY_CONFIGURE_OPTS=--with-jemalloc
+  changed_when: not ruby_installed
+
+- name: Select Ruby version
+  become: true
+  become_user: mastodon
+  ansible.builtin.command:
+    cmd: rbenv global {{ mastodon_ruby_version }}
+  changed_when: not ruby_installed
+
+# - name: Install the bundler
+#   become: true
+#   become_user: mastodon
+#   ansible.builtin.command:
+#     cmd: gem install bundler --no-document
+#   changed_when: not ruby_installed
+
+- name: Install the bundler
+  become: true
+  become_user: mastodon
+  ansible.communitiy.general.gem:
+    name: bundler
+    build_flags: --no-document
+    state: present
+
+- name: Install Mastodon source code
+  become: true
+  become_user: mastodon
+  ansible.builtin.git:
+    repo: https://github.com/mastodon/mastodon.git
+    dest: live
+    version: '{{ mastodon_version }}'
+
+- name: Configure bundler for production
+  become: true
+  become_user: mastodon
+  ansible.community.general.bundler:
+    state: present
+    deployment_mode: true
+
+- name: Skip the installation of development and test bundles
+  become: true
+  become_user: mastodon
+  ansible.community.general.bundler:
+    state: present
+    extra_args: 'config without "development test"'
+
+- name: Configure maximum parallel downloads
+  become: true
+  become_user: mastodon
+  ansible.community.general.bundler:
+    state: present
+    # This allows to configure the maximum parallel downloads based on the number of processors from the machine
+    extra_args: 'install -j$(getconf _NPROCESSORS_ONLN)'
+
+- name: Install Ruby and JavaScript dependencies
+  become: true
+  become_user: mastodon
+  ansible.community.general.yarn:
+    name: --pure-lockfile
+    state: present
