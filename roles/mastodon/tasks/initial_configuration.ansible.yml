@@ -1,86 +1,90 @@
 ---
 # TODO: Now we'll need to secure the machine first by editing the SSH config
 
-# We might need to install psycopg python module in the host, in case errors arise when executing this.
+# If this task is executed without having the ssh key properly configured the access to the machine is revoked.
+# - name: Disable password authentication in the host machine
+#   ansible.builtin.lineinfile:
+#     path: /etc/ssh/ssh_config
+#     regexp: '#PasswordAuthentication'
+#     line: '#PasswordAuthentication no'
+#     state: present
+
+- name: Restart ssh_service to apply changes
+  ansible.builtin.systemd_service:
+    name: ssh.service
+    state: restarted
+    daemon_reload: true
+
+- name: Configure Fail2ban
+  ansible.builtin.template:
+    src: roles/mastodon/templates/fail2ban_template.j2
+    dest: /etc/fail2ban/jail.local
+    mode: u=rw,g=r,o=r
+
+- name: Restart Fail2ban service to apply changes
+  ansible.builtin.systemd_service:
+    name: fail2ban
+    state: restarted
+    daemon_reload: true
+
+- name: Copy iptables configuration for ipv4
+  ansible.builtin.copy:
+    src: roles/mastodon/files/iptables-ipv4
+    dest: /etc/iptables/rules.v4
+    mode: u=rw,g=r,o=r
+
+- name: Apply ipv4 configuration to iptables
+  ansible.builtin.shell:
+    cmd: iptables-restore < /etc/iptables/rules.v4
+
+- name: Copy iptables configuration for ipv6
+  ansible.builtin.copy:
+    src: roles/mastodon/files/iptables-ipv6
+    dest: /etc/iptables/rules.v6
+    mode: u=rw,g=r,o=r
+
+# TODO: See why the applied configuration is failing, if it causes to much problem, we can just ignore this anyway.
+# - name: Apply ipv6 configuration to iptables
+#   ansible.builtin.shell:
+#     cmd: iptables-restore < /etc/iptables/rules.v6
+
 - name: Configure PostgreSQL user for mastodon
   become: true
   become_user: postgres
   community.postgresql.postgresql_user:
     name: mastodon
     state: present
-
-- name: Grant database creation permission for mastodon user
-  become: true
-  become_user: postgres
-  community.postgresql.postgresql_priv:
-    name: mastodon
+    priv: CREATE
     db: mastodon_production
-    priv: ALL
 
-
-
-
-
-
-# - name: Define server hostname
+# - name: Grant database creation permission for mastodon user
 #   become: true
-#   ansible.builtin.command: "sudo hostnamectl --static set-hostname {{ mastodon_server_hostname }}"
+#   become_user: postgres
+#   community.postgresql.postgresql_privs:
+#     db: mastodon_production
+#     privs: CREATE
+#     role: mastodon
+#     objs: database
+
+# TODO: We might need to do this using the expect module.
+# - name: Generate Mastodon Configuration
+#   become: true
+#   become_user: mastodon
+#   ansible.builtin.shell:
+#     cmd: RAILS_ENV=production bundle exec rake mastodon:setup
+#     executable: /bin/bash
+
+# - name: Generate certificate
+#   become: true
+#   ansible.builtin.shell:
+#     cmd: certbot certonly --nginx -d example.com
+#     executable: /bin/bash
+
 
 # - name: Extract external interfaces
 #   become: true
 #   ansible.builtin.shell: ip -br a | grep -oE 'enp[0-9]+s[0-9]+'
 #   register: ip_output
-
-# - name: Configure firewall
-#   become: true
-#   ansible.posix.firewalld:
-#     zone: public
-#     interface: "{{ ip_output.stdout_lines[0] }}"
-#     permanent: true
-#     state: enabled
-
-# - name: Enable http service
-#   become: true
-#   ansible.posix.firewalld:
-#     zone: public
-#     service: http
-#     permanent: true
-#     state: enabled
-
-# - name: Enable https service
-#   become: true
-#   ansible.posix.firewalld:
-#     zone: public
-#     service: https
-#     permanent: true
-#     state: enabled
-
-# - name: Ensure that docker interface is in a trusted zone
-#   become: true
-#   ansible.posix.firewalld:
-#     zone: trusted
-#     interface: docker0
-#     permanent: true
-#     state: enabled
-
-# - name: Add masquerade
-#   become: true
-#   ansible.posix.firewalld:
-#     zone: public
-#     masquerade: true
-#     permanent: true
-#     state: enabled
-
-# - name: Add Docker to allowed groups
-#   become: true
-#   ansible.builtin.command:
-#     cmd: "sudo usermod -a -G docker $USER"
-
-# - name: Alter Docker configuration to log messages to journald
-#   become: true
-#   ansible.builtin.copy:
-#     src: ../files/daemon.json
-#     dest: /etc/docker/daemon.json
 
 # - name: Reboot system to apply changes
 #   become: true

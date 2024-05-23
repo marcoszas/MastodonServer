@@ -1,0 +1,15 @@
+# We might need to install psycopg python module in the host, in case errors arise when executing this.
+- name: Configure PostgreSQL user for mastodon
+  become: true
+  become_user: postgres
+  community.postgresql.postgresql_user:
+    name: mastodon
+    state: present
+
+- name: Grant database creation permission for mastodon user
+  become: true
+  become_user: postgres
+  community.postgresql.postgresql_priv:
+    name: mastodon
+    db: mastodon_production
+    priv: ALL

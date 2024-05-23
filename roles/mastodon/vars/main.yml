@@ -1,5 +1,6 @@
 ---
 mastodon_server_hostname: mastodon
+mastodon_personal_email:
 mastodon_install_dependencies: true
 mastodon_perform_initial_config: true
 mastodon_generate_secrets: true
