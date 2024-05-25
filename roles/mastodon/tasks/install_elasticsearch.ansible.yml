@@ -1,0 +1,41 @@
+---
+- name: Install Java
+  ansible.builtin.apt:
+    name: openjdk-17-jre-headless
+    state: present
+    allow_downgrade: true
+
+- name: Create keyring file for elasticsearch
+  ansible.builtin.file:
+    path: /usr/share/keyrings/elasticsearch.asc
+    state: touch
+    mode: u=rw,g=rw,o=r
+
+- name: Install Elasticsearch | Add keyring
+  ansible.builtin.apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+    keyring: /usr/share/keyrings/elasticsearch.asc
+
+- name: Install Elasticsearch | Add repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/elasticsearch.asc] https://artifacts.elastic.co/packages/7.x/apt stable main"
+    state: present
+    filename: elastic-7.x.list
+
+- name: Update apt repositories
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install Elasticsearch
+  ansible.builtin.apt:
+    name: elasticsearch
+    state: present
+    allow_downgrades: true
+
+- name: Enable elasticsearch
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    name: elasticsearch
+    state: started
+    enabled: true

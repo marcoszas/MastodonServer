@@ -64,11 +64,13 @@
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
+    mode: u=rwx,g=rwx,o=rx
 
 - name: Create keyring file for nodesource
   ansible.builtin.file:
     path: /etc/apt/keyrings/nodesource.gpg
     state: touch
+    mode: u=rw,g=rw,o=r
 
 - name: Install Node.js
   ansible.builtin.apt_key:
@@ -82,10 +84,11 @@
     state: present
     filename: nodesource.list
 
-- name: Create keyring file for nodesource
+- name: Create keyring file for postgresql
   ansible.builtin.file:
     path: /usr/share/keyrings/postgresql.asc
     state: touch
+    mode: u=rw,g=rw,o=r
 
 - name: Install PostgreSQL
   ansible.builtin.apt_key:
@@ -98,6 +101,9 @@
     repo: "deb [signed-by=/usr/share/keyrings/postgresql.asc] http://apt.postgresql.org/pub/repos/apt focal-pgdg main"
     state: present
     filename: postgresql.list
+
+- name: Install Elasticsearch
+  ansible.builtin.include_tasks: install_elasticsearch.ansible.yml
 
 - name: Install system packages
   ansible.builtin.apt:
@@ -191,12 +197,13 @@
   ansible.builtin.git:
     repo: https://github.com/rbenv/rbenv.git
     dest: /home/mastodon/.rbenv
+    version: v1.2.0
 
 - name: Create .bashrc file in the mastodon user home
   ansible.builtin.file:
     state: touch
     path: /home/mastodon/.bashrc
-    mode: u=rwx,g=r,o=r
+    mode: u=rwx,g=rwx,o=r
 
 - name: Add rbenv to the PATH
   become: true
@@ -216,25 +223,13 @@
     cmd: . /home/mastodon/.bashrc
     executable: /bin/bash
 
-- name: Testing path
-  become: true
-  become_user: mastodon
-  ansible.builtin.shell:
-    cmd: bash -ilc 'echo $PATH'
-    executable: /bin/bash
-  register: result
-
-- name: show path in debug
-  ansible.builtin.debug:
-    msg: '{{ result.stdout }}'
-
 - name: Install Ruby environment build (rbenv-build)
   become: true
   become_user: mastodon
   ansible.builtin.git:
     repo: https://github.com/rbenv/ruby-build.git
     dest: /home/mastodon/.rbenv/plugins/ruby-build
-  ignore_errors: true
+    version: v20240517
 
 # - name: Check if rbenv is installed
 #   become: true
@@ -249,7 +244,6 @@
 #     ruby_installed: "{{ mastodon_ruby_version in rbenv_versions.stdout_lines }}"
 
 # TODO: We need to take a look at this
-# If we don't find a solution to do it via Ansible, another possible alternative would be to use a script executed in the machine.
 - name: Install Ruby
   become: true
   become_user: mastodon

@@ -59,6 +59,8 @@
   ansible.builtin.template:
     src: roles/mastodon/templates/env.production.config.j2
     dest: /home/mastodon/live/.env.production
+    owner: mastodon
+    mode: u=rw,g=rw,o=r
   when: mastodon_generate_secrets
 
 # TODO: Some mechanism needs to be created to avoid launching this tasks if the database has been created already, otherwise they'll fail.
@@ -66,7 +68,7 @@
   become: true
   become_user: mastodon
   ansible.builtin.shell:
-    cmd: bash -ilc 'export PATH="/home/mastodon/live/bin:$PATH" && rails db:setup'
+    cmd: bash -ilc 'bin/rails db:setup'
     executable: /bin/bash
     chdir: /home/mastodon/live
 
@@ -74,7 +76,7 @@
   become: true
   become_user: mastodon
   ansible.builtin.shell:
-    cmd: bash -ilc 'export PATH="/home/mastodon/live/bin:$PATH" && rails db:create'
+    cmd: bash -ilc 'bin/rails db:create'
     executable: /bin/bash
     chdir: /home/mastodon/live
 
@@ -82,7 +84,7 @@
   become: true
   become_user: mastodon
   ansible.builtin.shell:
-    cmd: bash -ilc 'export PATH="/home/mastodon/live/bin:$PATH" && rails assets:precompile'
+    cmd: bash -ilc 'bin/rails assets:precompile'
     executable: /bin/bash
     chdir: /home/mastodon/live
 
@@ -148,3 +150,9 @@
     - mastodon-web
     - mastodon-sidekiq
     - mastodon-streaming
+
+- name: Create Elasticsearch idices and fill them
+  ansible.builtin.shell:
+    cmd: bash -ilc 'bin/tootctl search deploy'
+    executable: /bin/bash
+    chdir: /home/mastodon/live
