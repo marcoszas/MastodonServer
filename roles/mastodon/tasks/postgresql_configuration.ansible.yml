@@ -1,15 +1,30 @@
-# We might need to install psycopg python module in the host, in case errors arise when executing this.
-- name: Configure PostgreSQL user for mastodon
-  become: true
-  become_user: postgres
-  community.postgresql.postgresql_user:
-    name: mastodon
-    state: present
+# - name: Create Mastodon PostgreSQL database
+#   become: true
+#   become_user: postgres
+#   community.postgresql.postgresql_db:
+#     name: mastodon_production
+#     state: present
 
-- name: Grant database creation permission for mastodon user
+# - name: Configure PostgreSQL user for mastodon
+#   become: true
+#   become_user: postgres
+#   community.postgresql.postgresql_user:
+#     name: mastodon
+#     state: present
+#     db: mastodon_production
+
+# - name: Grant database creation permission for mastodon user
+#   become: true
+#   become_user: postgres
+#   community.postgresql.postgresql_privs:
+#     db: mastodon_production
+#     privs: ALL
+#     role: mastodon
+#     type: database
+
+# TODO: This should be done using the postgres module.
+- name: Grant mastodon user permissions to create databases
   become: true
-  become_user: postgres
-  community.postgresql.postgresql_priv:
-    name: mastodon
-    db: mastodon_production
-    priv: ALL
+  ansible.builtin.shell:
+    cmd: sudo -u postgres createuser mastodon --createdb
+    executable: /bin/bash

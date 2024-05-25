@@ -1,7 +1,7 @@
 ---
-# - name: Update apt cache
-#   ansible.builtin.apt:
-#     update_cache: true
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
 
 - name: Upgrade packages
   ansible.builtin.apt:
@@ -18,7 +18,6 @@
     state: present
     allow_downgrade: true
 
-# This could potentially fail if the wizard options are not accepted correctly
 - name: Install firewall (iptables)
   ansible.builtin.apt:
     name: iptables-persistent
@@ -144,6 +143,11 @@
     name: psycopg2
     state: present
 
+- name: Install pexpect pip module for interactive prompts
+  ansible.builtin.pip:
+    name: pexpect
+    state: present
+
 - name: Enable corepack
   ansible.builtin.command:
     cmd: 'corepack enable'
@@ -152,7 +156,6 @@
   ansible.builtin.shell:
     cmd: 'y | yarn set version classic'
 
-# We might need to add the system option.
 - name: Add Mastodon user
   become: true
   become_user: root
@@ -161,17 +164,7 @@
     shell: /bin/bash
     state: present
 
-# - name: I am confused
-#   become: true
-#   shell: 'echo $PATH'
-#   # become_method: su
-#   become_user: mastodon
-#   register: myidentity
-
-# - name: my secret identity
-#   debug:
-#     msg: '{{ myidentity.stdout }}'
-
+# TODO: The installation of ruby should be done using the available role for it.
 # - name: Include the rbenv role
 #   ansible.builtin.include_role:
 #     name: geerlingguy.ruby
@@ -191,35 +184,13 @@
 #     ruby_version: "{{ mastodon_ruby_version }}"
 #     ruby_source_configure_command: ./configure --with-jemalloc
 
-
-
 # We have to use become_user to change the user the task is being executed on.
 - name: Clone Ruby environment (rbenv)
   become: true
   become_user: mastodon
-  # become_method: su
   ansible.builtin.git:
     repo: https://github.com/rbenv/rbenv.git
     dest: /home/mastodon/.rbenv
-  # ignore_errors: true
-
-# - name: Add rbenv to the PATH
-#   become: true
-#   become_user: mastodon
-#   ansible.builtin.lineinfile:
-#     path: ~/.bashrc
-#     line: 'export PATH="$HOME/.rbenv/bin:$PATH"'
-#     insertafter: EOF
-#   when: lookup('file', '~/.bashrc') is not search('export PATH="$HOME/.rbenv/bin:$PATH"')
-
-# - name: Add rbenv to the PATH
-#   become: true
-#   become_user: mastodon
-#   ansible.builtin.lineinfile:
-#     path: ~/.bashrc
-#     line: 'eval "$(rbenv init -)"'
-#     insertafter: EOF
-#   when: lookup('file', '~/.bashrc') is not search('eval "$(rbenv init -)"')
 
 - name: Create .bashrc file in the mastodon user home
   ansible.builtin.file:
@@ -236,6 +207,7 @@
   with_items:
     - 'export PATH="$HOME/.rbenv/bin:$PATH"'
     - 'eval "$(rbenv init -)"'
+    - 'export RAILS_ENV="production"'
 
 - name: Reload shell
   become: true
@@ -299,7 +271,7 @@
   ansible.builtin.shell:
     cmd: "bash -ilc 'gem install bundler --no-document'"
     executable: /bin/bash
-#   changed_when: not ruby_installed
+  # changed_when: not ruby_installed
 
 # - name: Install the bundler
 #   become: true
@@ -325,12 +297,15 @@
     cmd: "bash -ilc 'bundle config deployment 'true''"
     executable: '/bin/bash'
     chdir: /home/mastodon/live
+
 # - name: Configure bundler for production
 #   become: true
 #   become_user: mastodon
 #   community.general.bundler:
 #     state: present
 #     deployment_mode: true
+#     executable: /home/mastodon/live/bin/bundle
+#     chdir: /home/mastodon/live
 
 - name: Skip the installation of development and test bundles
   become: true
@@ -347,7 +322,7 @@
 #     state: present
 #     extra_args: 'config without "development test"'
 
-- name: Configure maximum parallel downloads
+- name: Install bundle dependencies
   become: true
   become_user: mastodon
   ansible.builtin.shell:
@@ -363,10 +338,17 @@
 #     # This allows to configure the maximum parallel downloads based on the number of processors from the machine
 #     extra_args: 'install -j$(getconf _NPROCESSORS_ONLN)'
 
+# - name: Install Ruby and JavaScript dependencies
+#   become: true
+#   become_user: mastodon
+#   community.general.yarn:
+#     state: present
+#     production: true
+#     path: /home/mastodon/live
+
 - name: Install Ruby and JavaScript dependencies
   become: true
   become_user: mastodon
-  community.general.yarn:
-    state: present
-    production: true
-    path: /home/mastodon/live
+  ansible.builtin.shell:
+    cmd: 'y | yarn install --pure-lockfile'
+    chdir: /home/mastodon/live

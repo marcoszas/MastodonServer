@@ -48,44 +48,103 @@
 #   ansible.builtin.shell:
 #     cmd: iptables-restore < /etc/iptables/rules.v6
 
-- name: Configure PostgreSQL user for mastodon
+- name: Configure PostgreSQL
+  ansible.builtin.include_tasks: postgresql_configuration.ansible.yml
+
+- name: Generate secrets
+  ansible.builtin.include_tasks: secrets_config.ansible.yml
+  when: mastodon_generate_secrets
+
+- name: Configure Mastodon | Copy template file into the target host
+  ansible.builtin.template:
+    src: roles/mastodon/templates/env.production.config.j2
+    dest: /home/mastodon/live/.env.production
+  when: mastodon_generate_secrets
+
+# TODO: Some mechanism needs to be created to avoid launching this tasks if the database has been created already, otherwise they'll fail.
+- name: Configure Mastodon | Create database schema
   become: true
-  become_user: postgres
-  community.postgresql.postgresql_user:
-    name: mastodon
-    state: present
-    priv: CREATE
-    db: mastodon_production
+  become_user: mastodon
+  ansible.builtin.shell:
+    cmd: bash -ilc 'export PATH="/home/mastodon/live/bin:$PATH" && rails db:setup'
+    executable: /bin/bash
+    chdir: /home/mastodon/live
 
-# - name: Grant database creation permission for mastodon user
-#   become: true
-#   become_user: postgres
-#   community.postgresql.postgresql_privs:
-#     db: mastodon_production
-#     privs: CREATE
-#     role: mastodon
-#     objs: database
+- name: Configure Mastodon | Create database
+  become: true
+  become_user: mastodon
+  ansible.builtin.shell:
+    cmd: bash -ilc 'export PATH="/home/mastodon/live/bin:$PATH" && rails db:create'
+    executable: /bin/bash
+    chdir: /home/mastodon/live
 
-# TODO: We might need to do this using the expect module.
-# - name: Generate Mastodon Configuration
-#   become: true
-#   become_user: mastodon
-#   ansible.builtin.shell:
-#     cmd: RAILS_ENV=production bundle exec rake mastodon:setup
-#     executable: /bin/bash
+- name: Configure Mastodon | Run assets precompilation
+  become: true
+  become_user: mastodon
+  ansible.builtin.shell:
+    cmd: bash -ilc 'export PATH="/home/mastodon/live/bin:$PATH" && rails assets:precompile'
+    executable: /bin/bash
+    chdir: /home/mastodon/live
 
-# - name: Generate certificate
-#   become: true
-#   ansible.builtin.shell:
-#     cmd: certbot certonly --nginx -d example.com
-#     executable: /bin/bash
+# TODO: This should be done using a certificate module since the command is interactive and could potentially generate incorrect configurations.
+- name: Generate certificate
+  become: true
+  ansible.builtin.shell:
+    cmd: "certbot certonly --nginx -d {{ mastodon_server_domain }}"
 
+- name: Create Nginx configuration
+  ansible.builtin.template:
+    src: roles/mastodon/templates/nginx_config.j2
+    dest: /etc/nginx/sites-available/mastodon
 
-# - name: Extract external interfaces
-#   become: true
-#   ansible.builtin.shell: ip -br a | grep -oE 'enp[0-9]+s[0-9]+'
-#   register: ip_output
+- name: Create link for nginx configuration
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/mastodon
+    dest: /etc/nginx/sites-enabled/mastodon
+    state: link
 
-# - name: Reboot system to apply changes
-#   become: true
-#   ansible.builtin.reboot:
+- name: Remove leftover file for Nginx
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Restart Nginx service
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: restarted
+    daemon_reload: true
+
+- name: Copy systemd service templates from the Mastodon directory
+  ansible.builtin.copy:
+    remote_src: true
+    src: /home/mastodon/live/dist/mastodon-sidekiq.service
+    dest: /etc/systemd/system/
+
+- name: Copy systemd service templates from the Mastodon directory
+  ansible.builtin.copy:
+    remote_src: true
+    src: /home/mastodon/live/dist/mastodon-streaming.service
+    dest: /etc/systemd/system/
+
+- name: Copy systemd service templates from the Mastodon directory
+  ansible.builtin.copy:
+    remote_src: true
+    src: /home/mastodon/live/dist/mastodon-streaming@.service
+    dest: /etc/systemd/system/
+
+- name: Copy systemd service templates from the Mastodon directory
+  ansible.builtin.copy:
+    remote_src: true
+    src: /home/mastodon/live/dist/mastodon-web.service
+    dest: /etc/systemd/system/
+
+- name: Start Mastodon services
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    enabled: true
+    name: "{{ item }}"
+    state: started
+  with_items:
+    - mastodon-web
+    - mastodon-sidekiq
+    - mastodon-streaming
