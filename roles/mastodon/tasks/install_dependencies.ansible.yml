@@ -157,6 +157,7 @@
 - name: Enable corepack
   ansible.builtin.command:
     cmd: 'corepack enable'
+  changed_when: false
 
 - name: Set Yarn
   ansible.builtin.shell:
@@ -197,7 +198,7 @@
   ansible.builtin.git:
     repo: https://github.com/rbenv/rbenv.git
     dest: /home/mastodon/.rbenv
-    version: v1.2.0
+    version: "{{ mastodon_rbenv_version }}"
 
 - name: Create .bashrc file in the mastodon user home
   ansible.builtin.file:
@@ -222,6 +223,7 @@
   ansible.builtin.shell:
     cmd: . /home/mastodon/.bashrc
     executable: /bin/bash
+  changed_when: false
 
 - name: Install Ruby environment build (rbenv-build)
   become: true
@@ -229,27 +231,29 @@
   ansible.builtin.git:
     repo: https://github.com/rbenv/ruby-build.git
     dest: /home/mastodon/.rbenv/plugins/ruby-build
-    version: v20240517
+    version: "{{ mastodon_rbenv_build_version }}"
 
-# - name: Check if rbenv is installed
-#   become: true
-#   become_user: mastodon
-#   ansible.builtin.shell:
-#     cmd: rbenv versions --bare
-#   register: rbenv_versions
-#   changed_when: false
+- name: Check if Ruby is installed
+  become: true
+  become_user: mastodon
+  ansible.builtin.shell:
+    cmd: bash -ilc 'rbenv versions --bare'
+    executable: /bin/bash
+  register: ruby_versions
+  changed_when: false
 
-# - name: Check if rbenv is present
-#   ansible.builtin.set_fact:
-#     ruby_installed: "{{ mastodon_ruby_version in rbenv_versions.stdout_lines }}"
+- name: Check if Ruby version is present
+  ansible.builtin.set_fact:
+    ruby_installed: "{{ mastodon_ruby_version in ruby_versions.stdout_lines }}"
 
-# TODO: We need to take a look at this
 - name: Install Ruby
   become: true
   become_user: mastodon
   ansible.builtin.shell:
     cmd: "bash -ilc 'RUBY_CONFIGURE_OPTS=--with-jemalloc rbenv install {{ mastodon_ruby_version }} --skip-existing'"
     executable: "/bin/bash"
+  when: not ruby_installed
+  changed_when: not ruby_installed
 
 - name: Select Ruby version
   become: true
@@ -257,7 +261,8 @@
   ansible.builtin.shell:
     cmd: "bash -ilc 'rbenv global {{ mastodon_ruby_version }}'"
     executable: /bin/bash
-  # changed_when: not ruby_installed
+  when: not ruby_installed
+  changed_when: not ruby_installed
 
 - name: Install the bundler
   become: true
@@ -332,17 +337,17 @@
 #     # This allows to configure the maximum parallel downloads based on the number of processors from the machine
 #     extra_args: 'install -j$(getconf _NPROCESSORS_ONLN)'
 
-# - name: Install Ruby and JavaScript dependencies
-#   become: true
-#   become_user: mastodon
-#   community.general.yarn:
-#     state: present
-#     production: true
-#     path: /home/mastodon/live
-
 - name: Install Ruby and JavaScript dependencies
   become: true
   become_user: mastodon
-  ansible.builtin.shell:
-    cmd: 'y | yarn install --pure-lockfile'
-    chdir: /home/mastodon/live
+  community.general.yarn:
+    state: present
+    production: true
+    path: /home/mastodon/live
+
+# - name: Install Ruby and JavaScript dependencies
+#   become: true
+#   become_user: mastodon
+#   ansible.builtin.shell:
+#     cmd: 'y | yarn install --pure-lockfile'
+#     chdir: /home/mastodon/live

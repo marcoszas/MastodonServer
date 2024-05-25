@@ -5,6 +5,8 @@ mastodon_postgres_version: 14
 mastodon_redis_version: 7
 mastodon_elasticsearch_version: 7.17.3
 mastodon_nginx_version: 1.18.0-6ubuntu14.4
+mastodon_rbenv_version: v1.2.0
+mastodon_rbenv_build_version: v20240517
 mastodon_ruby_version: 3.2.3
 
 # Configuration variables
