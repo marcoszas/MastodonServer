@@ -142,14 +142,14 @@ Otherwise the secret generation could cause some errors if the docker containers
 The versions of the dependencies for the Mastodon server can be updated or downgraded by setting the desired versions in the vars file located in /roles/mastodon/defaults/main.yml.
 ```yaml
 ---
-mastodon_postgres_version: 14
-mastodon_redis_version: 7
-mastodon_elasticsearch_version: 7.17.3
+dependencies_postgres_version: 14
+dependencies_redis_version: 7
+dependencies_elasticsearch_version: 7.17.3
 mastodon_mastodon_version: v4.0.2
 mastodon_docker_io_version: 24.0.5-0ubuntu1~22.04.1
 mastodon_docker_compose_version: 1.29.2-1
 mastodon_firewalld_version: 1.1.1-1ubuntu1
-mastodon_nginx_version: 1.18.0-6ubuntu14.4
+dependencies_nginx_version: 1.18.0-6ubuntu14.4
 ```
 
 ## Contributing

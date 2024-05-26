@@ -2,4 +2,6 @@
   hosts: mastodon_host
   become: true
   roles:
+    - basic_config
+    - dependencies
     - mastodon

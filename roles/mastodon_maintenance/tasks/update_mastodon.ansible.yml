@@ -1,0 +1,27 @@
+---
+# Additional steps may be taken based on the version release documentation.
+- name: Update dependencies
+  ansible.builtin.include_role: /roles/basic_config
+
+- name: Precompile mastodon assets
+  ansible.builtin.shell:
+    cmd: bash -ilc 'RAILS_ENV="production" bin/bundle exec rails assets:precompile'
+    executable: /bin/bash
+    chdir: /home/mastodon/live
+  register: result
+  changed_when: result.rc == 0
+
+- name: Restart mastodon-sidekiq service
+  ansible.builtin.systemd_service:
+    name: mastodon-sidekiq
+    state: restarted
+
+- name: Reload mastodon-web service
+  ansible.builtin.systemd_service:
+    name: mastodon-web
+    state: reloaded
+
+- name: Restart mastodon-streaming service
+  ansible.builtin.systemd_service:
+    name: mastodon-streaming
+    state: restarted

@@ -1,0 +1,9 @@
+---
+- name: Update version dependencies
+  ansible.builtin.include_role:
+    - dependencies
+  when: mastodon_maintenance_update_versions
+
+- name: Apply mastodon version changes
+  ansible.builtin.include_tasks: update_mastodon.ansible.yml
+  when: mastodon_maintenance_restart_mastodon

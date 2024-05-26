@@ -1,0 +1,14 @@
+---
+- name: Add Mastodon user
+  become: true
+  become_user: root
+  ansible.builtin.user:
+    name: mastodon
+    shell: /bin/bash
+    state: present
+
+- name: Create .bashrc file in the mastodon user home
+  ansible.builtin.file:
+    state: touch
+    path: /home/mastodon/.bashrc
+    mode: u=rwx,g=rwx,o=r

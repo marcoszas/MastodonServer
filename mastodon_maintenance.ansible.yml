@@ -1,0 +1,5 @@
+- name: Perform basic maintenance tasks on the Mastodon Web Server
+  hosts: mastodon_host
+  become: true
+  roles:
+    - mastodon_maintenance

@@ -69,7 +69,7 @@
     mode: u=rw,g=rw,o=r
   when: not env_file.stat.exists
 
-- name: Configure Mastodon | Create database schema
+- name: Configure Mastodon | Create database and database schema
   become: true
   become_user: mastodon
   ansible.builtin.shell:
@@ -79,17 +79,6 @@
   register: db_schema_result
   when: database_exists.stdout_lines[0] == '0'
   changed_when: db_schema_result.rc == 0
-
-- name: Configure Mastodon | Create database
-  become: true
-  become_user: mastodon
-  ansible.builtin.shell:
-    cmd: bash -ilc 'bin/rails db:create'
-    executable: /bin/bash
-    chdir: /home/mastodon/live
-  register: db_create_result
-  when: database_exists.stdout_lines[0] == '0'
-  changed_when: db_create_result.rc == 0
 
 - name: Configure Mastodon | Run assets precompilation
   become: true
@@ -144,7 +133,6 @@
     src: /home/mastodon/live/dist/mastodon-streaming.service
     dest: /etc/systemd/system/
     mode: u=rw,g=rw,o=r
-
 
 - name: Copy systemd service templates from the Mastodon directory
   ansible.builtin.copy:
