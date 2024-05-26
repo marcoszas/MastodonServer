@@ -4,15 +4,23 @@
 #   become_user: postgres
 #   community.postgresql.postgresql_db:
 #     name: mastodon_production
-#     state: present
+#     # login_user: mastodon
+#     # login_host: localhost
+#     login_password: "{{ mastodon_postgresql_password }}"
+#     port: 5432
+
 
 # - name: Configure PostgreSQL user for mastodon
 #   become: true
 #   become_user: postgres
 #   community.postgresql.postgresql_user:
 #     name: mastodon
-#     state: present
 #     db: mastodon_production
+#     password: "{{ mastodon_postgresql_password }}"
+#     # login_host: localhost
+#     # login_user: mastodon
+#     port: 5432
+#     role_attr_flags: CREATEDB
 
 # - name: Grant database creation permission for mastodon user
 #   become: true
@@ -24,8 +32,8 @@
 #     type: database
 
 # TODO: This should be done using the postgres module.
-- name: Grant mastodon user permissions to create databases
-  become: true
-  ansible.builtin.shell:
-    cmd: sudo -u postgres createuser mastodon --createdb
-    executable: /bin/bash
+# - name: Grant mastodon user permissions to create databases
+#   become: true
+#   ansible.builtin.shell:
+#     cmd: sudo -u postgres createuser mastodon --createdb
+#     executable: /bin/bash

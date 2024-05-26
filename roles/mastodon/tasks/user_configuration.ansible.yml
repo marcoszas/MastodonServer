@@ -1,0 +1,11 @@
+---
+- name: Create admin user
+  ansible.builtin.shell:
+    cmd: |
+      bash -ilc 'RAILS_ENV=production bin/tootctl accounts create \
+      {{ mastodon_admin_account_name }} \
+      --email {{ mastodon_admin_email }} \
+      --confirmed \
+      --role Owner'
+    executable: /bin/bash
+    chdir: /home/mastodon/live

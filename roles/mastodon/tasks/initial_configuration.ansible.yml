@@ -36,6 +36,7 @@
 - name: Apply ipv4 configuration to iptables
   ansible.builtin.shell:
     cmd: iptables-restore < /etc/iptables/rules.v4
+  changed_when: false
 
 - name: Copy iptables configuration for ipv6
   ansible.builtin.copy:
@@ -71,6 +72,8 @@
     cmd: bash -ilc 'bin/rails db:setup'
     executable: /bin/bash
     chdir: /home/mastodon/live
+  register: db_schema_result
+  changed_when: db_schema_result.rc == 0
 
 - name: Configure Mastodon | Create database
   become: true
@@ -79,6 +82,8 @@
     cmd: bash -ilc 'bin/rails db:create'
     executable: /bin/bash
     chdir: /home/mastodon/live
+  register: db_create_result
+  changed_when: db_create_result.rc == 0
 
 - name: Configure Mastodon | Run assets precompilation
   become: true
@@ -87,17 +92,20 @@
     cmd: bash -ilc 'bin/rails assets:precompile'
     executable: /bin/bash
     chdir: /home/mastodon/live
+  register: assets_precompile_result
+  changed_when: assets_precompile_result.rc == 0
 
 # TODO: This should be done using a certificate module since the command is interactive and could potentially generate incorrect configurations.
-- name: Generate certificate
-  become: true
-  ansible.builtin.shell:
-    cmd: "certbot certonly --nginx -d {{ mastodon_server_domain }}"
+# - name: Generate certificate
+#   become: true
+#   ansible.builtin.shell:
+#     cmd: "certbot certonly --nginx -d {{ mastodon_server_domain }}"
 
 - name: Create Nginx configuration
   ansible.builtin.template:
     src: roles/mastodon/templates/nginx_config.j2
     dest: /etc/nginx/sites-available/mastodon
+    mode: u=rw,g=rw,o=r
 
 - name: Create link for nginx configuration
   ansible.builtin.file:
@@ -121,24 +129,29 @@
     remote_src: true
     src: /home/mastodon/live/dist/mastodon-sidekiq.service
     dest: /etc/systemd/system/
+    mode: u=rw,g=rw,o=r
 
 - name: Copy systemd service templates from the Mastodon directory
   ansible.builtin.copy:
     remote_src: true
     src: /home/mastodon/live/dist/mastodon-streaming.service
     dest: /etc/systemd/system/
+    mode: u=rw,g=rw,o=r
+
 
 - name: Copy systemd service templates from the Mastodon directory
   ansible.builtin.copy:
     remote_src: true
     src: /home/mastodon/live/dist/mastodon-streaming@.service
     dest: /etc/systemd/system/
+    mode: u=rw,g=rw,o=r
 
 - name: Copy systemd service templates from the Mastodon directory
   ansible.builtin.copy:
     remote_src: true
     src: /home/mastodon/live/dist/mastodon-web.service
     dest: /etc/systemd/system/
+    mode: u=rw,g=rw,o=r
 
 - name: Start Mastodon services
   ansible.builtin.systemd_service:
@@ -151,8 +164,12 @@
     - mastodon-sidekiq
     - mastodon-streaming
 
-- name: Create Elasticsearch idices and fill them
+- name: Create Elasticsearch indices and fill them
+  become: true
+  become_user: mastodon
   ansible.builtin.shell:
-    cmd: bash -ilc 'bin/tootctl search deploy'
+    cmd: bash -ilc 'RAILS_ENV="production" bin/tootctl search deploy'
     executable: /bin/bash
     chdir: /home/mastodon/live
+  register: elasticsearch_output
+  changed_when: elasticsearch_output.rc == 0

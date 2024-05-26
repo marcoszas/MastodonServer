@@ -160,8 +160,9 @@
   changed_when: false
 
 - name: Set Yarn
-  ansible.builtin.shell:
-    cmd: 'y | yarn set version classic'
+  ansible.builtin.command:
+    cmd: yarn set version classic
+  changed_when: false
 
 - name: Add Mastodon user
   become: true
@@ -170,26 +171,6 @@
     name: mastodon
     shell: /bin/bash
     state: present
-
-# TODO: The installation of ruby should be done using the available role for it.
-# - name: Include the rbenv role
-#   ansible.builtin.include_role:
-#     name: geerlingguy.ruby
-#   vars:
-#     workspace: /home/mastodon
-#     # A list of Ruby gems to install.
-#     # ruby_install_gems:
-#     #   - name: rbenv-build
-
-#     # The user account under which Ruby gems will be installed.
-#     ruby_install_gems_user: mastodon
-
-#     # If set to True, ruby will be installed from source, using the version set with
-#     # the 'ruby_version' variable instead of using a package.
-#     ruby_download_url: "http://cache.ruby-lang.org/pub/ruby/3.2/ruby-3.2.3.tar.gz"
-#     ruby_install_from_source: true
-#     ruby_version: "{{ mastodon_ruby_version }}"
-#     ruby_source_configure_command: ./configure --with-jemalloc
 
 # We have to use become_user to change the user the task is being executed on.
 - name: Clone Ruby environment (rbenv)
@@ -270,15 +251,7 @@
   ansible.builtin.shell:
     cmd: "bash -ilc 'gem install bundler --no-document'"
     executable: /bin/bash
-  # changed_when: not ruby_installed
-
-# - name: Install the bundler
-#   become: true
-#   become_user: mastodon
-#   community.general.gem:
-#     name: bundler
-#     build_flags: --no-document
-#     state: present
+  changed_when: not ruby_installed
 
 - name: Install Mastodon source code
   become: true
@@ -289,22 +262,14 @@
     force: true
     version: '{{ mastodon_version }}'
 
-- name: Configure bundler for production
+- name: Configure bundler for production deployment
   become: true
   become_user: mastodon
   ansible.builtin.shell:
     cmd: "bash -ilc 'bundle config deployment 'true''"
     executable: '/bin/bash'
     chdir: /home/mastodon/live
-
-# - name: Configure bundler for production
-#   become: true
-#   become_user: mastodon
-#   community.general.bundler:
-#     state: present
-#     deployment_mode: true
-#     executable: /home/mastodon/live/bin/bundle
-#     chdir: /home/mastodon/live
+  changed_when: false
 
 - name: Skip the installation of development and test bundles
   become: true
@@ -313,13 +278,7 @@
     cmd: "bash -ilc 'bundle config without 'development test''"
     executable: /bin/bash
     chdir: /home/mastodon/live
-
-# - name: Skip the installation of development and test bundles
-#   become: true
-#   become_user: mastodon
-#   community.general.bundler:
-#     state: present
-#     extra_args: 'config without "development test"'
+  changed_when: false
 
 - name: Install bundle dependencies
   become: true
@@ -328,26 +287,12 @@
     cmd: "bash -ilc 'bundle install -j$(getconf _NPROCESSORS_ONLN)'"
     executable: /bin/bash
     chdir: /home/mastodon/live
-
-# - name: Configure maximum parallel downloads
-#   become: true
-#   become_user: mastodon
-#   community.general.bundler:
-#     state: present
-#     # This allows to configure the maximum parallel downloads based on the number of processors from the machine
-#     extra_args: 'install -j$(getconf _NPROCESSORS_ONLN)'
+  changed_when: false
 
 - name: Install Ruby and JavaScript dependencies
   become: true
   become_user: mastodon
-  community.general.yarn:
-    state: present
-    production: true
-    path: /home/mastodon/live
-
-# - name: Install Ruby and JavaScript dependencies
-#   become: true
-#   become_user: mastodon
-#   ansible.builtin.shell:
-#     cmd: 'y | yarn install --pure-lockfile'
-#     chdir: /home/mastodon/live
+  ansible.builtin.command:
+    cmd: yarn install --pure-lockfile
+    chdir: /home/mastodon/live
+  changed_when: false
