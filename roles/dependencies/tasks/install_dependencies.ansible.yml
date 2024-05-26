@@ -66,39 +66,41 @@
     state: directory
     mode: u=rwx,g=rwx,o=rx
 
-- name: Create keyring file for nodesource
+- name: Install Node.js | Create keyring file for nodesource
   ansible.builtin.file:
     path: /etc/apt/keyrings/nodesource.gpg
     state: touch
     mode: u=rw,g=rw,o=r
 
-- name: Install Node.js
+- name: Install Node.js | Add keyring
   ansible.builtin.apt_key:
     url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
     state: present
     keyring: /etc/apt/keyrings/nodesource.gpg
 
-- name: Add NodeSource repository
+- name: Install Node.js | Add NodeSource repository | Version {{ dependencies_nodejs_distro_version }}
   ansible.builtin.apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main"
+    repo: "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x \
+      {{ dependencies_nodejs_distro_version }} {{ dependencies_nodejs_version }}"
     state: present
     filename: nodesource.list
 
-- name: Create keyring file for postgresql
+- name: Install PostgreSQL | Create keyring file for postgresql
   ansible.builtin.file:
     path: /usr/share/keyrings/postgresql.asc
     state: touch
     mode: u=rw,g=rw,o=r
 
-- name: Install PostgreSQL
+- name: Install PostgreSQL | Add keyring
   ansible.builtin.apt_key:
     url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
     state: present
     keyring: /usr/share/keyrings/postgresql.asc
 
-- name: Add PostgreSQL repository
+- name: Install PostgreSQL | Add PostgreSQL repository | Version {{ dependencies_postgresql_source_distro_version }}
   ansible.builtin.apt_repository:
-    repo: "deb [signed-by=/usr/share/keyrings/postgresql.asc] http://apt.postgresql.org/pub/repos/apt focal-pgdg main"
+    repo: "deb [signed-by=/usr/share/keyrings/postgresql.asc] http://apt.postgresql.org/pub/repos/apt \
+     {{ dependencies_postgresql_source_distro_version }} {{ dependencies_postgresql_source_tag }}"
     state: present
     filename: postgresql.list
 
@@ -108,7 +110,7 @@
     state: present
     allow_downgrade: true
 
-- name: Create keyring file for elasticsearch
+- name: Install Elasticsearch | Create keyring file for elasticsearch
   ansible.builtin.file:
     path: /usr/share/keyrings/elasticsearch.asc
     state: touch
@@ -168,10 +170,10 @@
       - libncurses5-dev
       - libffi-dev
       - libgdbm-dev
-      - nginx
+      - nginx={{ dependencies_nginx_version }}
       - nodejs
-      - redis-server
-      - redis-tools
+      - redis-server={{ dependencies_redis_version }}
+      - redis-tools={{ dependencies_redis_version }}
       - postgresql
       - postgresql-contrib
       - certbot

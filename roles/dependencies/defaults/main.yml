@@ -1,10 +1,13 @@
 ---
 # Versions
 dependencies_mastodon_version: v4.2.8
-dependencies_postgres_version: 14
-dependencies_redis_version: 7
+dependencies_postgresql_source_distro_version: focal-pgdg
+dependencies_postgresql_source_tag: main
+dependencies_nodejs_distro_version: nodistro
+dependencies_nodejs_version: main
+dependencies_redis_version: 5:5.0.7-2ubuntu0.1
 dependencies_elasticsearch_version: 7.17.3
-dependencies_nginx_version: 1.18.0-6ubuntu14.4
+dependencies_nginx_version: 1.18.0-0ubuntu1.4
 dependencies_rbenv_version: v1.2.0
 dependencies_rbenv_build_version: v20240517
 dependencies_ruby_version: 3.2.3

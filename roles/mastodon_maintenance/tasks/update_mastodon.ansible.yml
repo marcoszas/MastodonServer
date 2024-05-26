@@ -1,9 +1,8 @@
 ---
 # Additional steps may be taken based on the version release documentation.
-- name: Update dependencies
-  ansible.builtin.include_role: /roles/basic_config
-
 - name: Precompile mastodon assets
+  become: true
+  become_user: mastodon
   ansible.builtin.shell:
     cmd: bash -ilc 'RAILS_ENV="production" bin/bundle exec rails assets:precompile'
     executable: /bin/bash
