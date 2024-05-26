@@ -52,9 +52,14 @@
 - name: Configure PostgreSQL
   ansible.builtin.include_tasks: postgresql_configuration.ansible.yml
 
+- name: Check if .env.production file has been generated already
+  ansible.builtin.stat:
+    path: /home/mastodon/live/.env.production
+  register: env_file
+
 - name: Generate secrets
   ansible.builtin.include_tasks: secrets_config.ansible.yml
-  when: mastodon_generate_secrets
+  when: not env_file.stat.exists
 
 - name: Configure Mastodon | Copy template file into the target host
   ansible.builtin.template:
@@ -62,9 +67,8 @@
     dest: /home/mastodon/live/.env.production
     owner: mastodon
     mode: u=rw,g=rw,o=r
-  when: mastodon_generate_secrets
+  when: not env_file.stat.exists
 
-# TODO: Some mechanism needs to be created to avoid launching this tasks if the database has been created already, otherwise they'll fail.
 - name: Configure Mastodon | Create database schema
   become: true
   become_user: mastodon
@@ -73,6 +77,7 @@
     executable: /bin/bash
     chdir: /home/mastodon/live
   register: db_schema_result
+  when: database_exists.stdout_lines[0] == '0'
   changed_when: db_schema_result.rc == 0
 
 - name: Configure Mastodon | Create database
@@ -83,6 +88,7 @@
     executable: /bin/bash
     chdir: /home/mastodon/live
   register: db_create_result
+  when: database_exists.stdout_lines[0] == '0'
   changed_when: db_create_result.rc == 0
 
 - name: Configure Mastodon | Run assets precompilation
@@ -93,6 +99,7 @@
     executable: /bin/bash
     chdir: /home/mastodon/live
   register: assets_precompile_result
+  when: database_exists.stdout_lines[0] == '0'
   changed_when: assets_precompile_result.rc == 0
 
 # TODO: This should be done using a certificate module since the command is interactive and could potentially generate incorrect configurations.
@@ -164,6 +171,7 @@
     - mastodon-sidekiq
     - mastodon-streaming
 
+# The population of the indices is only done if the indices are empty (this is handled by tootctl)
 - name: Create Elasticsearch indices and fill them
   become: true
   become_user: mastodon

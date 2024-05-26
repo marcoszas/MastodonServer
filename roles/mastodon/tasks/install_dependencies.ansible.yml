@@ -160,8 +160,8 @@
   changed_when: false
 
 - name: Set Yarn
-  ansible.builtin.command:
-    cmd: yarn set version classic
+  ansible.builtin.shell:
+    cmd: y | yarn set version classic
   changed_when: false
 
 - name: Add Mastodon user
@@ -292,7 +292,7 @@
 - name: Install Ruby and JavaScript dependencies
   become: true
   become_user: mastodon
-  ansible.builtin.command:
-    cmd: yarn install --pure-lockfile
+  ansible.builtin.shell:
+    cmd: y | yarn install --pure-lockfile
     chdir: /home/mastodon/live
   changed_when: false

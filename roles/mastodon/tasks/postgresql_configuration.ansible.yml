@@ -31,9 +31,18 @@
 #     role: mastodon
 #     type: database
 
+- name: Check whether mastodon_production database exists already
+  become: true
+  ansible.builtin.shell:
+    cmd: sudo -u postgres psql -l | grep mastodon_production | wc -l
+  register: database_exists
+  changed_when: false
+
 # TODO: This should be done using the postgres module.
-# - name: Grant mastodon user permissions to create databases
-#   become: true
-#   ansible.builtin.shell:
-#     cmd: sudo -u postgres createuser mastodon --createdb
-#     executable: /bin/bash
+- name: Grant mastodon user permissions to create databases
+  become: true
+  ansible.builtin.shell:
+    cmd: sudo -u postgres createuser mastodon --createdb
+    executable: /bin/bash
+  when: database_exists.stdout_lines[0] == '0'
+  changed_when: database_exists.stdout_lines[0] == '0'

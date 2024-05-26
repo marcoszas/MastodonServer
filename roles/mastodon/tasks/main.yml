@@ -1,8 +1,6 @@
 ---
 - name: Install all necessary dependencies
   ansible.builtin.include_tasks: install_dependencies.ansible.yml
-  when: mastodon_install_dependencies
 
 - name: Perform initial configuration
   ansible.builtin.include_tasks: initial_configuration.ansible.yml
-  when: mastodon_perform_initial_config

@@ -1,9 +1,6 @@
 ---
 mastodon_server_domain: example.com
 mastodon_personal_email: example@email.com
-mastodon_install_dependencies: true
-mastodon_perform_initial_config: true
-mastodon_generate_secrets: true
 mastodon_smtp_from_address: 'Mastodon <notifications@test.example.com>'
 
 # Passwords
