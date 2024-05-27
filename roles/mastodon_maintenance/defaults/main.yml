@@ -1,3 +1,4 @@
 ---
 mastodon_maintenance_update_versions: true
 mastodon_maintenance_restart_mastodon: true
+mastodon_maintenance_apply_basic_maintenance: false

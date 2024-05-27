@@ -1,1 +1,32 @@
 ---
+- name: Add crontab job for periodic media remove
+  ansible.builtin.cron:
+    name: media remove
+    state: present
+    user: mastodon
+    job: "RAILS_ENV=production /home/mastodon/live/bin/tootctl media remove"
+    special_time: "weekly"
+  when: mastodon_maintenance_apply_basic_maintenance
+
+- name: Add crontab job for periodic media remove
+  ansible.builtin.cron:
+    name: preview cards remove
+    state: present
+    user: mastodon
+    job: "RAILS_ENV=production /home/mastodon/live/bin/tootctl preview_cards remove"
+    special_time: "weekly"
+  when: mastodon_maintenance_apply_basic_maintenance
+
+- name: Remove crontab job for periodic media remove
+  ansible.builtin.cron:
+    name: media remove
+    state: absent
+    user: mastodon
+  when: not mastodon_maintenance_apply_basic_maintenance
+
+- name: Remove crontab job for periodic media remove
+  ansible.builtin.cron:
+    name: preview cards remove
+    state: absent
+    user: mastodon
+  when: not mastodon_maintenance_apply_basic_maintenance

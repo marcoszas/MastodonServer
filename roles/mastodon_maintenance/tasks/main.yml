@@ -7,3 +7,6 @@
 - name: Apply mastodon version changes
   ansible.builtin.include_tasks: update_mastodon.ansible.yml
   when: mastodon_maintenance_update_versions and mastodon_maintenance_restart_mastodon
+
+- name: Perform basic maintenance for the Mastodon server
+  ansible.builtin.include_tasks: basic_maintenance.ansible.yml
