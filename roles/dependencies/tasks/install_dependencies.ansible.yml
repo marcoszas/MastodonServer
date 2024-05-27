@@ -81,7 +81,7 @@
 - name: Install Node.js | Add NodeSource repository | Version {{ dependencies_nodejs_distro_version }}
   ansible.builtin.apt_repository:
     repo: "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x \
-      {{ dependencies_nodejs_distro_version }} {{ dependencies_nodejs_version }}"
+      {{ dependencies_nodejs_distro_version }} {{ dependencies_nodejs_source_tag }}"
     state: present
     filename: nodesource.list
 
@@ -134,7 +134,7 @@
 
 - name: Install Elasticsearch
   ansible.builtin.apt:
-    name: elasticsearch
+    name: elasticsearch={{ dependencies_elasticsearch_version }}
     state: present
     allow_downgrades: true
 
@@ -171,12 +171,13 @@
       - libffi-dev
       - libgdbm-dev
       - nginx={{ dependencies_nginx_version }}
-      - nodejs
+      - nodejs={{ dependencies_nodejs_version }}
       - redis-server={{ dependencies_redis_version }}
       - redis-tools={{ dependencies_redis_version }}
-      - postgresql
+      - postgresql={{ dependencies_postgresql_version }}
       - postgresql-contrib
       - certbot
+      - python3={{ dependencies_python3_version }}
       - python3-certbot-nginx
       - python3-pip
       - libidn11-dev
@@ -201,7 +202,8 @@
 
 - name: Set Yarn
   ansible.builtin.shell:
-    cmd: y | yarn set version classic
+    cmd: yes | yarn set version classic
+    executable: /bin/bash
   changed_when: false
 
 # We have to use become_user to change the user the task is being executed on.
@@ -320,6 +322,8 @@
   become: true
   become_user: mastodon
   ansible.builtin.shell:
-    cmd: y | yarn install --pure-lockfile
+    cmd: yes | yarn install --pure-lockfile
     chdir: /home/mastodon/live
-  changed_when: false
+    executable: /bin/bash
+  register: yarn_install_result
+  changed_when: not "success Already up-to-date." in yarn_install_result.stdout_lines
