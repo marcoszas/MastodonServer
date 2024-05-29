@@ -4,8 +4,8 @@ mastodon_personal_email: example@email.com
 mastodon_smtp_from_address: 'Mastodon <notifications@test.example.com>'
 
 # Passwords
-mastodon_postgresql_password: test
-mastodon_redis_password: test
+mastodon_postgresql_password: foobar
+mastodon_redis_password: foobar
 
 # Admin account
 mastodon_admin_account_name: admin

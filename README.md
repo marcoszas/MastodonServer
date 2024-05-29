@@ -1,6 +1,6 @@
 # Automatized Mastodon Server Installation
 
-This project aims to streamline the process of installing and maintaining a Mastodon server using Docker and Ansible.
+This project aims to streamline the process of installing and maintaining a Mastodon server using Ansible.
 
 ## Requirements
 
@@ -8,22 +8,23 @@ First of all you'll need to have a control node from where Ansible instructions 
 
 The **control node** will have to be **Red Hat, Debian, CentOS, macOS, any of the BSDs, and so on**, as stated in the official Ansible documentation. Windows is not supported as the control node.
 
-The **host** will have to be a **Ubuntu Server 22.04** that allows for SSH connections.
+The **host** will have to be an **Ubuntu Server 20.04** that allows for SSH connections.
 
 Several dependencies will have to be installed in the control node:
-- Ansible 2.16.5
+- Ansible or Ansible Core >=2.16.5
 - Python 2 (version 2.6 or later) or Python 3 (version 3.5 or later)
 - Pip
 - Ansible Galaxy collections
-    - ansible.posix
+    - community.general
 
 For further information on Ansible requirements and dependencies you can check [Ansible Requirements](https://docs.ansible.com/ansible/2.9/installation_guide/index.html).
 
-The necessary dependencies for the host machine are listed below (although they'll be automatically installed by the Ansible script):
-- Docker
-- Docker-compose
-- Firewalld
+Some of the necessary dependencies for the host machine are listed below (although they'll be automatically installed by the Ansible script):
+- Iptables
+- Redis
+- PostgreSQL
 - Nginx
+- Elasticsearch
 
 ## Installing / Getting started
 
@@ -104,8 +105,9 @@ Now it should be possible to run the ```ansible-playbook``` command to install *
 ```shell
 ansible-playbook -i inventory.ini --ask-become-pass mastodon_install.ansible.yml
 ```
-4. Wait for the tasks to finish.
-5. Finally, a Mastodon server instance should be running in a Docker container within the target host.
+4. Enter the target's host password.
+5. Wait for the tasks to finish.
+6. Finally, a Mastodon server instance should be running within the target host.
 
 ## Features
 
@@ -113,44 +115,69 @@ ansible-playbook -i inventory.ini --ask-become-pass mastodon_install.ansible.yml
 - Automatically configure the host machine minimizing the room for error.
 - Perform initial server configuration automatically.
 - Update dependencies versions.
+- Set automatic maintenance tasks.
 
 ## Configuration
 
 The configuration of the installation script, is done trough the "main.yml" file, located in the "roles/mastodon/vars/" directory, located inside the project.
 
-The initial configuration must be set like this
+These values must be substituted with valid ones, or they can be left unchanged if you're just trying the installation.
 ```yaml
-mastodon_server_hostname: mastodon
-mastodon_install_dependencies: true
-mastodon_perform_initial_config: true
-mastodon_generate_secrets: true
-```
+---
+# Server configuration
+mastodon_server_domain: example.com
+mastodon_personal_email: example@email.com
+mastodon_smtp_from_address: 'Mastodon <notifications@test.example.com>'
 
-If for whatever reason the installation script needs to be launched again, the configuration should be changed to at least the following state
-```yaml
-mastodon_server_hostname: mastodon
-mastodon_install_dependencies: true
-mastodon_perform_initial_config: true
-mastodon_generate_secrets: false
-```
-Otherwise the secret generation could cause some errors if the docker containers are not restarted to apply the new configuration.
+# Passwords
+mastodon_postgresql_password: foobar
+mastodon_redis_password: foobar
 
-> This is set to be improved in the future so no further configuration needs to be done.
+# Admin account
+mastodon_admin_account_name: admin
+mastodon_admin_email: admin@email.com
+
+```
 
 ### Updating dependencies
 
-The versions of the dependencies for the Mastodon server can be updated or downgraded by setting the desired versions in the vars file located in /roles/mastodon/defaults/main.yml.
+The versions of the dependencies for the Mastodon server can be updated or downgraded by setting the desired versions in the "main.yml" file located in /roles/dependencies/vars/main.yml.
 ```yaml
 ---
-dependencies_postgres_version: 14
-dependencies_redis_version: 7
-dependencies_elasticsearch_version: 7.17.3
-mastodon_mastodon_version: v4.0.2
-mastodon_docker_io_version: 24.0.5-0ubuntu1~22.04.1
-mastodon_docker_compose_version: 1.29.2-1
-mastodon_firewalld_version: 1.1.1-1ubuntu1
-dependencies_nginx_version: 1.18.0-6ubuntu14.4
+# Versions
+dependencies_mastodon_version: v4.2.8
+dependencies_postgresql_source_distro_version: focal-pgdg
+dependencies_postgresql_source_tag: main
+dependencies_postgresql_version: 16+260.pgdg20.04+1
+dependencies_nodejs_distro_version: nodistro
+dependencies_nodejs_source_tag: main
+dependencies_nodejs_version: 20.13.1-1nodesource1
+dependencies_redis_version: 5:5.0.7-2ubuntu0.1
+dependencies_elasticsearch_version: 7.17.21
+dependencies_nginx_version: 1.18.0-0ubuntu1.4
+dependencies_rbenv_version: v1.2.0
+dependencies_rbenv_build_version: v20240517
+dependencies_ruby_version: 3.2.3
+dependencies_python3_version: 3.8.2-0ubuntu2
 ```
+
+In order to apply the configuration, you need to launch the maintenance playbook with the following command:
+
+```shell
+ansible-playbook -i inventory.ini --ask-become-pass mastodon_maintenance.ansible.yml
+```
+
+The maintenance playbook can also apply some other automations to keep the Mastodon server in shape.
+
+The configuration of the playbook can be done through the "main.yml" file located in /roles/mastodon-maintenance/vars/main.yml.
+```yaml
+---
+mastodon_maintenance_update_versions: true
+mastodon_maintenance_restart_mastodon: true
+mastodon_maintenance_apply_basic_maintenance: false
+```
+
+If the automatic maintenance tasks are to be activated, the "mastodon_maintenance_apply_basic_maintenance" variable, must be set to true. The configuration can be deactivated by setting the variable to false and running the maintenance playbook again.
 
 ## Contributing
 
