@@ -30,3 +30,19 @@
     state: absent
     user: mastodon
   when: not mastodon_maintenance_apply_basic_maintenance
+
+- name: Add crontab job for automatically accepting new user requests
+  ansible.builtin.cron:
+    name: accept pending sign in requests
+    state: present
+    user: mastodon
+    job: "RAILS_ENV=production /home/mastodon/live/bin/tootctl accounts approve --all"
+    special_time: "weekly"
+  when: mastodon_maintenance_accept_user_requests_automatically
+
+- name: Remove crontab job for automatically accepting new user requests
+  ansible.builtin.cron:
+    name: accept pending sign in requests
+    state: absent
+    user: mastodon
+  when: not mastodon_maintenance_accept_user_requests_automatically

@@ -159,3 +159,6 @@
     chdir: /home/mastodon/live
   register: elasticsearch_output
   changed_when: elasticsearch_output.rc == 0
+
+- name: Create Admin account
+  ansible.builtin.include_tasks: user_configuration.ansible.yml

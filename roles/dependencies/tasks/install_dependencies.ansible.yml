@@ -78,7 +78,7 @@
     state: present
     keyring: /etc/apt/keyrings/nodesource.gpg
 
-- name: Install Node.js | Add NodeSource repository | Version {{ dependencies_nodejs_distro_version }}
+- name: Install Node.js | Add NodeSource repository | Version {{ dependencies_nodejs_version }}
   ansible.builtin.apt_repository:
     repo: "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x \
       {{ dependencies_nodejs_distro_version }} {{ dependencies_nodejs_source_tag }}"
@@ -97,7 +97,7 @@
     state: present
     keyring: /usr/share/keyrings/postgresql.asc
 
-- name: Install PostgreSQL | Add PostgreSQL repository | Version {{ dependencies_postgresql_source_distro_version }}
+- name: Install PostgreSQL | Add PostgreSQL repository | Version {{ dependencies_postgresql_version }}
   ansible.builtin.apt_repository:
     repo: "deb [signed-by=/usr/share/keyrings/postgresql.asc] http://apt.postgresql.org/pub/repos/apt \
      {{ dependencies_postgresql_source_distro_version }} {{ dependencies_postgresql_source_tag }}"
@@ -184,6 +184,7 @@
       - libicu-dev
       - libjemalloc-dev
     state: present
+    allow_downgrade: true
 
 - name: Install psycopg2 for PostgreSQL control
   ansible.builtin.pip:

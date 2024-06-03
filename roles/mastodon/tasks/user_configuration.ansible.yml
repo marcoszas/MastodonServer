@@ -1,5 +1,13 @@
 ---
+- name: Create password auxiliary file
+  ansible.builtin.file:
+    path: /home/mastodon/temporaryPassword.txt
+    state: touch
+    mode: u=rw
+
 - name: Create admin user
+  become: true
+  become_user: mastodon
   ansible.builtin.shell:
     cmd: |
       bash -ilc 'RAILS_ENV=production bin/tootctl accounts create \
@@ -9,3 +17,10 @@
       --role Owner'
     executable: /bin/bash
     chdir: /home/mastodon/live
+  register: password
+  failed_when: false
+
+- name: Save temporary password
+  ansible.builtin.lineinfile:
+    line: "{{ password.stdout_lines[1] }}"
+  when: password.stdout is search("New password")

@@ -7,6 +7,6 @@ mastodon_smtp_from_address: 'Mastodon <notifications@test.example.com>'
 mastodon_postgresql_password: foobar
 mastodon_redis_password: foobar
 
-# Admin account
-mastodon_admin_account_name: admin
-mastodon_admin_email: admin@email.com
+# Admin account (some keywords like admin are reserved, check Mastodon documentation for further info.)
+mastodon_admin_account_name: example
+mastodon_admin_email: example@email.com
