@@ -22,5 +22,6 @@
 
 - name: Save temporary password
   ansible.builtin.lineinfile:
+    path: /home/mastodon/temporaryPassword.txt
     line: "{{ password.stdout_lines[1] }}"
   when: password.stdout is search("New password")
